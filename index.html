@@ -77,7 +77,30 @@
             <!-- Officer Dashboard -->
             <div id="officerDashboard" class="tab-content hidden">
                 <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h2 class="text-xl font-bold text-dark-green mb-6">ข้อมูลเจ้าหน้าที่ทุกหน่วยงาน</h2>
+                    <h2 class="text-xl font-bold text-dark-green mb-6">ข้อมูลเครือข่ายทีม SRRT</h2>
+                    <!-- Search and Filter Section -->
+                    <div class="mb-6 bg-gray-50 p-4 rounded-lg">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาข้อมูล</label>
+                                <input type="text" id="officerSearch" placeholder="ค้นหาจากชื่อ รหัสเจ้าหน้าที่ หรือหน่วยงาน..." class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onkeyup="searchOfficers()">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามหน่วยงาน</label>
+                                <select id="orgFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
+                                    <option value="">ทุกหน่วยงาน</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามสถานะการอบรม</label>
+                                <select id="trainingFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
+                                    <option value="">ทุกสถานะ</option>
+                                    <option value="trained">ผ่านการอบรมแล้ว</option>
+                                    <option value="not-trained">ยังไม่ผ่านการอบรม</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Organization blocks will be populated by JavaScript -->
                 </div>
             </div>
@@ -154,7 +177,10 @@
                             <input type="email" id="editEmail" value="bangrak@bma.go.th" class="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
                         </div>
                     </div>
-                    <button onclick="saveOrgInfo()" class="bg-medium-green text-white px-4 py-2 rounded hover:bg-dark-green mb-6">บันทึกข้อมูลหน่วยงาน</button>
+                    <div class="flex space-x-2 mb-6">
+                        <button onclick="saveOrgInfo()" class="bg-medium-green text-white px-4 py-2 rounded hover:bg-dark-green">บันทึกข้อมูลหน่วยงาน</button>
+                        <button onclick="confirmData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">ยืนยัน</button>
+                    </div>
                     
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-dark-green">จัดการสมาชิกในทีม</h3>
@@ -169,6 +195,7 @@
                                     <th class="px-4 py-2 text-left">หน่วยงาน</th>
                                     <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
                                     <th class="px-4 py-2 text-left">อีเมล</th>
+                                    <th class="px-4 py-2 text-center">การอบรม</th>
                                     <th class="px-4 py-2 text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -474,7 +501,7 @@
             
             if (userRole === 'officer') {
                 navTabs.innerHTML = `
-                    <button onclick="showTab('officerDashboard')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลเจ้าหน้าที่</button>
+                    <button onclick="showTab('officerDashboard')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลเครือข่ายทีม SRRT</button>
                     <button onclick="showTab('teamManagement')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลทีม</button>
                 `;
             } else if (userRole === 'admin') {
@@ -601,10 +628,57 @@
         function loadOfficerDashboardData() {
             const container = document.querySelector('#officerDashboard .bg-white');
             
-            // Clear existing content except the header
+            // Clear existing content except the header and search section
             const header = container.querySelector('h2');
+            const searchSection = container.querySelector('.mb-6.bg-gray-50');
             container.innerHTML = '';
             container.appendChild(header);
+            
+            // Re-add search section if it exists
+            if (searchSection) {
+                container.appendChild(searchSection);
+            } else {
+                // Create search section if it doesn't exist
+                const searchDiv = document.createElement('div');
+                searchDiv.className = 'mb-6 bg-gray-50 p-4 rounded-lg';
+                searchDiv.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาข้อมูล</label>
+                            <input type="text" id="officerSearch" placeholder="ค้นหาจากชื่อ รหัสเจ้าหน้าที่ หรือหน่วยงาน..." class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onkeyup="searchOfficers()">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามหน่วยงาน</label>
+                            <select id="orgFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
+                                <option value="">ทุกหน่วยงาน</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามสถานะการอบรม</label>
+                            <select id="trainingFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
+                                <option value="">ทุกสถานะ</option>
+                                <option value="trained">ผ่านการอบรมแล้ว</option>
+                                <option value="not-trained">ยังไม่ผ่านการอบรม</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(searchDiv);
+            }
+            
+            // Populate organization filter dropdown
+            const orgFilter = document.getElementById('orgFilter');
+            if (orgFilter) {
+                const existingOptions = orgFilter.querySelectorAll('option:not([value=""])');
+                existingOptions.forEach(option => option.remove());
+                
+                organizations.forEach(org => {
+                    const option = document.createElement('option');
+                    option.value = org.id;
+                    option.textContent = org.name;
+                    orgFilter.appendChild(option);
+                });
+            }
             
             // Group officers by organization
             const officersByOrg = {};
@@ -788,9 +862,9 @@
         // Load activity log data
         function loadActivityLogData() {
             const tbody = document.getElementById('activityLogTableBody');
-            // Filter only add, edit, delete actions
+            // Filter only add, edit, delete, confirm actions
             const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ'
+                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน'
             );
             
             tbody.innerHTML = filteredLog.map((log, index) => `
@@ -925,12 +999,19 @@
             alert('บันทึกข้อมูลหน่วยงานเรียบร้อยแล้ว');
         }
 
+        function confirmData() {
+            if (confirm('ต้องการยืนยันข้อมูลว่าถูกต้องแล้วหรือไม่?')) {
+                logActivity('ยืนยัน', 'ยืนยันข้อมูลหน่วยงานและสมาชิกในทีม');
+                alert('ยืนยันข้อมูลเรียบร้อยแล้ว');
+            }
+        }
+
 
 
         // Log activity
         function logActivity(action, detail, oldValue = null, newValue = null) {
-            // Only log add, edit, delete actions
-            if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ') {
+            // Only log add, edit, delete, confirm actions
+            if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ' || action === 'ยืนยัน') {
                 const now = new Date();
                 const date = now.toISOString().split('T')[0];
                 const time = now.toTimeString().split(' ')[0].substring(0, 5);
@@ -956,7 +1037,7 @@
         // Acknowledge activity function
         function acknowledgeActivity(index) {
             const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ'
+                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน'
             );
             
             if (filteredLog[index] && filteredLog[index].status === 'รอยืนยัน') {
@@ -974,6 +1055,68 @@
             }
         }
 
+        // Search and filter functions
+        function searchOfficers() {
+            filterOfficers();
+        }
+        
+        function filterOfficers() {
+            const searchTerm = document.getElementById('officerSearch')?.value.toLowerCase() || '';
+            const orgFilter = document.getElementById('orgFilter')?.value || '';
+            const trainingFilter = document.getElementById('trainingFilter')?.value || '';
+            
+            const orgBlocks = document.querySelectorAll('#officerDashboard .mb-8');
+            
+            orgBlocks.forEach(block => {
+                const rows = block.querySelectorAll('tbody tr');
+                let hasVisibleRows = false;
+                
+                rows.forEach(row => {
+                    const officerId = row.cells[0]?.textContent || '';
+                    const officerName = row.cells[1]?.textContent || '';
+                    const orgName = row.cells[2]?.textContent || '';
+                    
+                    // Get officer data for training filter
+                    const officer = officers.find(o => o.id === officerId);
+                    let hasTraining = false;
+                    if (officer && trainingData[officer.id]) {
+                        hasTraining = Object.values(trainingData[officer.id]).some(courses => courses && courses.length > 0);
+                    }
+                    
+                    // Apply filters
+                    let showRow = true;
+                    
+                    // Search filter
+                    if (searchTerm) {
+                        const searchText = `${officerId} ${officerName} ${orgName}`.toLowerCase();
+                        if (!searchText.includes(searchTerm)) {
+                            showRow = false;
+                        }
+                    }
+                    
+                    // Organization filter
+                    if (orgFilter && officer && officer.orgId !== orgFilter) {
+                        showRow = false;
+                    }
+                    
+                    // Training status filter
+                    if (trainingFilter) {
+                        if (trainingFilter === 'trained' && !hasTraining) {
+                            showRow = false;
+                        } else if (trainingFilter === 'not-trained' && hasTraining) {
+                            showRow = false;
+                        }
+                    }
+                    
+                    row.style.display = showRow ? '' : 'none';
+                    if (showRow) hasVisibleRows = true;
+                });
+                
+                // Hide/show entire organization block if no visible rows
+                block.style.display = hasVisibleRows ? '' : 'none';
+            });
+        }
+        
         // Placeholder functions for other modals and operations
         function showAddMemberModal() { alert('ฟีเจอร์เพิ่มสมาชิกใหม่'); }
         function showAddOfficerModal() { alert('ฟีเจอร์เพิ่มเจ้าหน้าที่ใหม่'); }
