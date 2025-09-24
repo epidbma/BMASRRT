@@ -599,25 +599,16 @@
 
         // Load officer dashboard data
         function loadOfficerDashboardData() {
-            // Populate filter dropdown
-            const filterOrg = document.getElementById('filterOrganization');
-            filterOrg.innerHTML = '<option value="">ทุกหน่วยงาน</option>';
-            organizations.forEach(org => {
-                filterOrg.innerHTML += `<option value="${org.id}">${org.name}</option>`;
-            });
+            const container = document.querySelector('#officerDashboard .bg-white');
             
-            // Load all officers initially
-            displayOfficerData(officers);
-        }
-
-        // Display officer data with filtering
-        function displayOfficerData(filteredOfficers) {
-            const container = document.getElementById('officerDataContainer');
+            // Clear existing content except the header
+            const header = container.querySelector('h2');
             container.innerHTML = '';
+            container.appendChild(header);
             
             // Group officers by organization
             const officersByOrg = {};
-            filteredOfficers.forEach(officer => {
+            officers.forEach(officer => {
                 if (!officersByOrg[officer.orgId]) {
                     officersByOrg[officer.orgId] = [];
                 }
@@ -646,27 +637,17 @@
                                         <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
                                         <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
                                         <th class="px-4 py-2 text-left">อีเมล</th>
-                                        <th class="px-4 py-2 text-center">สถานะการอบรม</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${officersByOrg[org.id].map(officer => {
-                                        const training = trainingData[officer.id];
-                                        const hasTraining = training && Object.values(training).some(courses => courses && courses.length > 0);
-                                        const trainingStatus = hasTraining ? 
-                                            '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ผ่านการอบรม</span>' :
-                                            '<span class="bg-red-100 text-red-800 px-2 py-1 rounded text-xs">ยังไม่ผ่านการอบรม</span>';
-                                        
-                                        return `
-                                            <tr class="border-b hover:bg-gray-50">
-                                                <td class="px-4 py-2">${officer.id}</td>
-                                                <td class="px-4 py-2">${officer.name}</td>
-                                                <td class="px-4 py-2">${officer.phone}</td>
-                                                <td class="px-4 py-2">${officer.email}</td>
-                                                <td class="px-4 py-2 text-center">${trainingStatus}</td>
-                                            </tr>
-                                        `;
-                                    }).join('')}
+                                    ${officersByOrg[org.id].map(officer => `
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="px-4 py-2">${officer.id}</td>
+                                            <td class="px-4 py-2">${officer.name}</td>
+                                            <td class="px-4 py-2">${officer.phone}</td>
+                                            <td class="px-4 py-2">${officer.email}</td>
+                                        </tr>
+                                    `).join('')}
                                 </tbody>
                             </table>
                         </div>
@@ -674,55 +655,6 @@
                     container.appendChild(orgBlock);
                 }
             });
-            
-            // Show message if no results
-            if (filteredOfficers.length === 0) {
-                container.innerHTML = '<div class="text-center py-8 text-gray-500">ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา</div>';
-            }
-        }
-
-        // Apply officer filters
-        function applyOfficerFilters() {
-            const searchText = document.getElementById('searchOfficer').value.toLowerCase();
-            const orgFilter = document.getElementById('filterOrganization').value;
-            const trainingFilter = document.getElementById('filterTraining').value;
-            
-            let filteredOfficers = officers.filter(officer => {
-                // Text search
-                const matchesSearch = !searchText || 
-                    officer.id.toLowerCase().includes(searchText) ||
-                    officer.name.toLowerCase().includes(searchText) ||
-                    officer.phone.includes(searchText) ||
-                    officer.email.toLowerCase().includes(searchText);
-                
-                // Organization filter
-                const matchesOrg = !orgFilter || officer.orgId === orgFilter;
-                
-                // Training filter
-                let matchesTraining = true;
-                if (trainingFilter) {
-                    const training = trainingData[officer.id];
-                    const hasTraining = training && Object.values(training).some(courses => courses && courses.length > 0);
-                    
-                    if (trainingFilter === 'trained') {
-                        matchesTraining = hasTraining;
-                    } else if (trainingFilter === 'not-trained') {
-                        matchesTraining = !hasTraining;
-                    }
-                }
-                
-                return matchesSearch && matchesOrg && matchesTraining;
-            });
-            
-            displayOfficerData(filteredOfficers);
-        }
-
-        // Clear officer filters
-        function clearOfficerFilters() {
-            document.getElementById('searchOfficer').value = '';
-            document.getElementById('filterOrganization').value = '';
-            document.getElementById('filterTraining').value = '';
-            displayOfficerData(officers);
         }
 
         // Load team data
@@ -870,10 +802,7 @@
                     <td class="px-4 py-2">${log.detail}</td>
                     <td class="px-4 py-2 text-center">
                         ${log.status === 'รอยืนยัน' ? 
-                            `<div class="flex space-x-1 justify-center">
-                                <button onclick="acknowledgeActivity(${index})" class="bg-green-500 text-white px-2 py-1 rounded text-xs hover:bg-green-600">ยืนยัน</button>
-                                <button onclick="rejectActivity(${index})" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">ปฏิเสธ</button>
-                            </div>` :
+                            `<button onclick="acknowledgeActivity(${index})" class="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600">รอยืนยัน</button>` :
                             `<span class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm">รับทราบ</span>`
                         }
                     </td>
@@ -1041,31 +970,6 @@
                 if (originalIndex !== -1) {
                     activityLog[originalIndex].status = 'รับทราบ';
                     loadActivityLogData(); // Refresh the table
-                    alert('ยืนยันการเปลี่ยนแปลงเรียบร้อยแล้ว');
-                }
-            }
-        }
-
-        // Reject activity function
-        function rejectActivity(index) {
-            const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ'
-            );
-            
-            if (filteredLog[index] && filteredLog[index].status === 'รอยืนยัน') {
-                if (confirm('คุณต้องการปฏิเสธการเปลี่ยนแปลงนี้หรือไม่?')) {
-                    // Find the original log entry and remove it
-                    const originalIndex = activityLog.findIndex(log => 
-                        log.date === filteredLog[index].date && 
-                        log.time === filteredLog[index].time && 
-                        log.detail === filteredLog[index].detail
-                    );
-                    
-                    if (originalIndex !== -1) {
-                        activityLog.splice(originalIndex, 1);
-                        loadActivityLogData(); // Refresh the table
-                        alert('ปฏิเสธการเปลี่ยนแปลงเรียบร้อยแล้ว');
-                    }
                 }
             }
         }
@@ -1085,5 +989,5 @@
         function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username); }
         function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username); }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'98409bf570f94ba6',t:'MTc1ODY5OTM3MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9840a241618b45b3',t:'MTc1ODY5OTYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
