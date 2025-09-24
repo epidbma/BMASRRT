@@ -177,10 +177,7 @@
                             <input type="email" id="editEmail" value="bangrak@bma.go.th" class="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
                         </div>
                     </div>
-                    <div class="flex space-x-2 mb-6">
-                        <button onclick="saveOrgInfo()" class="bg-medium-green text-white px-4 py-2 rounded hover:bg-dark-green">บันทึกข้อมูลหน่วยงาน</button>
-                        <button onclick="confirmData()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">ยืนยัน</button>
-                    </div>
+                    <button onclick="saveOrgInfo()" class="bg-medium-green text-white px-4 py-2 rounded hover:bg-dark-green mb-6">บันทึกข้อมูลหน่วยงาน</button>
                     
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-dark-green">จัดการสมาชิกในทีม</h3>
@@ -203,6 +200,29 @@
                                 <!-- Team members will be populated here -->
                             </tbody>
                         </table>
+                    </div>
+                    
+                    <!-- Confirmation Section -->
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="text-lg font-semibold text-dark-green">การยืนยันข้อมูล</h4>
+                                <p class="text-sm text-gray-600 mt-1">ยืนยันข้อมูลทีมและหน่วยงานเพื่อส่งให้ผู้ดูแลระบบตรวจสอบ</p>
+                            </div>
+                            <div class="flex space-x-3">
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">สถานะข้อมูลทีม:</div>
+                                    <span id="teamConfirmStatus" class="inline-block px-3 py-1 rounded text-sm font-medium">-</span>
+                                </div>
+                                <div class="text-center">
+                                    <div class="text-sm text-gray-600">สถานะข้อมูลหน่วยงาน:</div>
+                                    <span id="orgConfirmStatus" class="inline-block px-3 py-1 rounded text-sm font-medium">-</span>
+                                </div>
+                                <button id="confirmTeamDataBtn" onclick="confirmTeamData()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                    ยืนยันข้อมูล
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -277,6 +297,7 @@
                                     <th class="px-4 py-2 text-left">หน่วยงาน</th>
                                     <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
                                     <th class="px-4 py-2 text-left">อีเมล</th>
+                                    <th class="px-4 py-2 text-center">สถานะการยืนยัน</th>
                                     <th class="px-4 py-2 text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -332,6 +353,7 @@
                                     <th class="px-4 py-2 text-left">โทรศัพท์</th>
                                     <th class="px-4 py-2 text-left">โทรสาร</th>
                                     <th class="px-4 py-2 text-left">อีเมล</th>
+                                    <th class="px-4 py-2 text-center">สถานะการยืนยัน</th>
                                     <th class="px-4 py-2 text-center">จัดการ</th>
                                 </tr>
                             </thead>
@@ -458,6 +480,14 @@
             { date: '2024-01-11', time: '15:30', user: 'admin1', action: 'แก้ไข', detail: 'แก้ไขข้อมูลหน่วยงาน BMA001 | เดิม: อีเมล bangrak@bma.go.th | เปลี่ยนเป็น: bangrak.new@bma.go.th', status: 'รอยืนยัน' },
             { date: '2024-01-10', time: '10:15', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขชื่อเจ้าหน้าที่ OFF002 | เดิม: นางสาวมาลี สวยงาม | เปลี่ยนเป็น: นางมาลี สวยงาม', status: 'รับทราบ' }
         ];
+
+        // Confirmation status for each organization
+        const confirmationStatus = {
+            'BMA001': { teamConfirmed: false, orgConfirmed: false },
+            'BMA002': { teamConfirmed: false, orgConfirmed: false },
+            'BMA003': { teamConfirmed: false, orgConfirmed: false },
+            'BMA004': { teamConfirmed: false, orgConfirmed: false }
+        };
 
         // Login functionality
         document.getElementById('loginForm').addEventListener('submit', function(e) {
@@ -761,6 +791,12 @@
             document.getElementById('teamProgressText').textContent = `${trainedMembers}/${totalMembers} คน`;
             document.getElementById('teamProgressBar').style.width = `${trainingPercentage}%`;
             
+            // Update confirmation status display
+            updateConfirmationStatusDisplay();
+            
+            // Update confirmation status display
+            updateConfirmationStatusDisplay();
+            
             tbody.innerHTML = teamMembers.map(officer => `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="px-4 py-2">${officer.id}</td>
@@ -784,6 +820,17 @@
             const tbody = document.getElementById('allOfficersTableBody');
             tbody.innerHTML = officers.map(officer => {
                 const org = organizations.find(o => o.id === officer.orgId);
+                const confirmStatus = confirmationStatus[officer.orgId];
+                let statusDisplay = '';
+                let statusAction = '';
+                
+                if (confirmStatus && confirmStatus.teamConfirmed) {
+                    statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
+                    statusAction = `<button onclick="resetTeamConfirmation('${officer.orgId}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
+                } else {
+                    statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
+                }
+                
                 return `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-2">${officer.id}</td>
@@ -791,6 +838,10 @@
                         <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
                         <td class="px-4 py-2">${officer.phone}</td>
                         <td class="px-4 py-2">${officer.email}</td>
+                        <td class="px-4 py-2 text-center">
+                            ${statusDisplay}
+                            ${statusAction}
+                        </td>
                         <td class="px-4 py-2 text-center">
                             <button onclick="editOfficer('${officer.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
                             <button onclick="deleteOfficer('${officer.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
@@ -823,19 +874,36 @@
         // Load organizations data
         function loadOrganizationsData() {
             const tbody = document.getElementById('organizationsTableBody');
-            tbody.innerHTML = organizations.map(org => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-2">${org.id}</td>
-                    <td class="px-4 py-2">${org.name}</td>
-                    <td class="px-4 py-2">${org.phone}</td>
-                    <td class="px-4 py-2">${org.fax}</td>
-                    <td class="px-4 py-2">${org.email}</td>
-                    <td class="px-4 py-2 text-center">
-                        <button onclick="editOrganization('${org.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                        <button onclick="deleteOrganization('${org.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = organizations.map(org => {
+                const confirmStatus = confirmationStatus[org.id];
+                let statusDisplay = '';
+                let statusAction = '';
+                
+                if (confirmStatus && confirmStatus.orgConfirmed) {
+                    statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
+                    statusAction = `<button onclick="resetOrgConfirmation('${org.id}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
+                } else {
+                    statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
+                }
+                
+                return `
+                    <tr class="border-b hover:bg-gray-50">
+                        <td class="px-4 py-2">${org.id}</td>
+                        <td class="px-4 py-2">${org.name}</td>
+                        <td class="px-4 py-2">${org.phone}</td>
+                        <td class="px-4 py-2">${org.fax}</td>
+                        <td class="px-4 py-2">${org.email}</td>
+                        <td class="px-4 py-2 text-center">
+                            ${statusDisplay}
+                            ${statusAction}
+                        </td>
+                        <td class="px-4 py-2 text-center">
+                            <button onclick="editOrganization('${org.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
+                            <button onclick="deleteOrganization('${org.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
         // Load user accounts data
@@ -862,9 +930,9 @@
         // Load activity log data
         function loadActivityLogData() {
             const tbody = document.getElementById('activityLogTableBody');
-            // Filter only add, edit, delete, confirm actions
+            // Filter only add, edit, delete, confirm, reset actions
             const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน'
+                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน' || log.action === 'รีเซ็ต'
             );
             
             tbody.innerHTML = filteredLog.map((log, index) => `
@@ -999,19 +1067,10 @@
             alert('บันทึกข้อมูลหน่วยงานเรียบร้อยแล้ว');
         }
 
-        function confirmData() {
-            if (confirm('ต้องการยืนยันข้อมูลว่าถูกต้องแล้วหรือไม่?')) {
-                logActivity('ยืนยัน', 'ยืนยันข้อมูลหน่วยงานและสมาชิกในทีม');
-                alert('ยืนยันข้อมูลเรียบร้อยแล้ว');
-            }
-        }
-
-
-
         // Log activity
         function logActivity(action, detail, oldValue = null, newValue = null) {
-            // Only log add, edit, delete, confirm actions
-            if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ' || action === 'ยืนยัน') {
+            // Only log add, edit, delete, confirm, reset actions
+            if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ' || action === 'ยืนยัน' || action === 'รีเซ็ต') {
                 const now = new Date();
                 const date = now.toISOString().split('T')[0];
                 const time = now.toTimeString().split(' ')[0].substring(0, 5);
@@ -1037,7 +1096,7 @@
         // Acknowledge activity function
         function acknowledgeActivity(index) {
             const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน'
+                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน' || log.action === 'รีเซ็ต'
             );
             
             if (filteredLog[index] && filteredLog[index].status === 'รอยืนยัน') {
@@ -1115,6 +1174,158 @@
                 // Hide/show entire organization block if no visible rows
                 block.style.display = hasVisibleRows ? '' : 'none';
             });
+        }
+        
+        // Confirmation functions
+        function updateConfirmationStatusDisplay() {
+            const userOrg = currentUser.orgId;
+            const status = confirmationStatus[userOrg];
+            
+            // Update team confirmation status
+            const teamStatusEl = document.getElementById('teamConfirmStatus');
+            const orgStatusEl = document.getElementById('orgConfirmStatus');
+            const confirmBtn = document.getElementById('confirmTeamDataBtn');
+            
+            if (teamStatusEl) {
+                if (status.teamConfirmed) {
+                    teamStatusEl.textContent = 'ยืนยันแล้ว';
+                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    teamStatusEl.textContent = 'รอยืนยัน';
+                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
+                }
+            }
+            
+            if (orgStatusEl) {
+                if (status.orgConfirmed) {
+                    orgStatusEl.textContent = 'ยืนยันแล้ว';
+                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    orgStatusEl.textContent = 'รอยืนยัน';
+                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
+                }
+            }
+            
+            // Update button state
+            if (confirmBtn) {
+                if (status.teamConfirmed && status.orgConfirmed) {
+                    confirmBtn.textContent = 'ยืนยันแล้ว';
+                    confirmBtn.disabled = true;
+                    confirmBtn.className = 'bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed';
+                } else {
+                    confirmBtn.textContent = 'ยืนยันข้อมูล';
+                    confirmBtn.disabled = false;
+                    confirmBtn.className = 'bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700';
+                }
+            }
+        }
+        
+        function confirmTeamData() {
+            const userOrg = currentUser.orgId;
+            
+            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
+                confirmationStatus[userOrg].teamConfirmed = true;
+                confirmationStatus[userOrg].orgConfirmed = true;
+                
+                logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
+                updateConfirmationStatusDisplay();
+                
+                alert('ยืนยันข้อมูลเรียบร้อยแล้ว กรุณารอการตรวจสอบจากผู้ดูแลระบบ');
+            }
+        }
+        
+        function resetTeamConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
+                confirmationStatus[orgId].teamConfirmed = false;
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
+                loadAllOfficersData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
+        }
+        
+        function resetOrgConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
+                confirmationStatus[orgId].orgConfirmed = false;
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
+                loadOrganizationsData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
+        }
+        
+        // Confirmation functions
+        function updateConfirmationStatusDisplay() {
+            const userOrg = currentUser.orgId;
+            const status = confirmationStatus[userOrg];
+            
+            // Update team confirmation status
+            const teamStatusEl = document.getElementById('teamConfirmStatus');
+            const orgStatusEl = document.getElementById('orgConfirmStatus');
+            const confirmBtn = document.getElementById('confirmTeamDataBtn');
+            
+            if (teamStatusEl) {
+                if (status.teamConfirmed) {
+                    teamStatusEl.textContent = 'ยืนยันแล้ว';
+                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    teamStatusEl.textContent = 'รอยืนยัน';
+                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
+                }
+            }
+            
+            if (orgStatusEl) {
+                if (status.orgConfirmed) {
+                    orgStatusEl.textContent = 'ยืนยันแล้ว';
+                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    orgStatusEl.textContent = 'รอยืนยัน';
+                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
+                }
+            }
+            
+            // Update button state
+            if (confirmBtn) {
+                if (status.teamConfirmed && status.orgConfirmed) {
+                    confirmBtn.textContent = 'ยืนยันแล้ว';
+                    confirmBtn.disabled = true;
+                    confirmBtn.className = 'bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed';
+                } else {
+                    confirmBtn.textContent = 'ยืนยันข้อมูล';
+                    confirmBtn.disabled = false;
+                    confirmBtn.className = 'bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700';
+                }
+            }
+        }
+        
+        function confirmTeamData() {
+            const userOrg = currentUser.orgId;
+            
+            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
+                confirmationStatus[userOrg].teamConfirmed = true;
+                confirmationStatus[userOrg].orgConfirmed = true;
+                
+                logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
+                updateConfirmationStatusDisplay();
+                
+                alert('ยืนยันข้อมูลเรียบร้อยแล้ว กรุณารอการตรวจสอบจากผู้ดูแลระบบ');
+            }
+        }
+        
+        function resetTeamConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
+                confirmationStatus[orgId].teamConfirmed = false;
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
+                loadAllOfficersData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
+        }
+        
+        function resetOrgConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
+                confirmationStatus[orgId].orgConfirmed = false;
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
+                loadOrganizationsData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
         }
         
         // Placeholder functions for other modals and operations
