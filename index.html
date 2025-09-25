@@ -1,11 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="th">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ทีมเฝ้าระวังสอบสวนเคลื่อนที่เร็ว กรุงเทพมหานคร</title>
-    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>ระบบจัดการข้อมูลเครือข่ายทีม SRRT</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@100;200;300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -23,1317 +24,815 @@
             }
         }
     </script>
+    <!-- Firebase SDKs -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getDatabase, ref, set, get, child, push, update, remove, onValue } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+        import { getAnalytics } from 'https://www.gstatic.com/firebasejs/10.7.0/firebase-analytics.js';
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyBeCKoVceDGwX0EA3IEPEsmGULkzm3ddnE",
+            authDomain: "bmasrrt.firebaseapp.com",
+            databaseURL: "https://bmasrrt-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "bmasrrt",
+            storageBucket: "bmasrrt.firebasestorage.app",
+            messagingSenderId: "91632560633",
+            appId: "1:91632560633:web:313015041e20d883dc7528",
+            measurementId: "G-N4FC1EJRHJ"
+        };
+        
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app);
+        const analytics = getAnalytics(app);
+        
+        // Make Firebase available globally
+        window.firebaseDB = database;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebaseChild = child;
+        window.firebasePush = push;
+        window.firebaseUpdate = update;
+        window.firebaseRemove = remove;
+        window.firebaseOnValue = onValue;
+    </script>
 </head>
-<body class="font-anuphan bg-gray-100 min-h-screen">
+<body class="font-anuphan bg-gray-50">
     <!-- Login Page -->
-    <div id="loginPage" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-dark-green to-medium-green">
-        <div class="bg-white p-8 rounded-lg shadow-2xl w-full max-w-md">
-            <div class="text-center mb-8">
-                <h1 class="text-2xl font-bold text-dark-green mb-2">ทีมเฝ้าระวังสอบสวนเคลื่อนที่เร็ว</h1>
-                <p class="text-gray-600">กรุงเทพมหานคร</p>
+    <div id="loginPage" class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-md w-full space-y-8">
+            <div>
+                <h2 class="mt-6 text-center text-3xl font-bold text-gray-900">
+                    ระบบจัดการข้อมูลเครือข่ายทีม SRRT
+                </h2>
+                <p class="mt-2 text-center text-sm text-gray-600">
+                    กรุณาเข้าสู่ระบบเพื่อดำเนินการต่อ
+                </p>
             </div>
-            <form id="loginForm" class="space-y-6">
+            <form class="mt-8 space-y-6" onsubmit="event.preventDefault(); login();">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้งาน</label>
-                    <input type="text" id="username" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                    <label for="username" class="sr-only">ชื่อผู้ใช้</label>
+                    <input id="username" name="username" type="text" required 
+                           class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm" 
+                           placeholder="ชื่อผู้ใช้">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
-                    <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                    <label for="password" class="sr-only">รหัสผ่าน</label>
+                    <input id="password" name="password" type="password" required 
+                           class="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm" 
+                           placeholder="รหัสผ่าน">
                 </div>
-                <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
+                <div>
+                    <button type="submit" 
+                            class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-dark-green hover:bg-medium-green focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500">
+                        เข้าสู่ระบบ
+                    </button>
+                </div>
             </form>
-            <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
-            <div class="mt-6 text-xs text-gray-500 text-center">
-                <p>บัญชีทดสอบ:</p>
-                <p>เจ้าหน้าที่: officer1 / pass123</p>
-                <p>ผู้ดูแลระบบ: admin1 / admin123</p>
-            </div>
         </div>
     </div>
 
-    <!-- Main Application -->
-    <div id="mainApp" class="hidden">
-        <!-- Navigation -->
-        <nav class="bg-dark-green text-white shadow-lg">
-            <div class="max-w-7xl mx-auto px-4">
-                <div class="flex justify-between items-center py-4">
+    <!-- Dashboard -->
+    <div id="dashboard" class="hidden">
+        <!-- Header -->
+        <header class="bg-dark-green text-white shadow-lg">
+            <div class="container mx-auto px-4 py-3">
+                <div class="flex justify-between items-center">
+                    <h1 class="text-xl font-bold">ระบบจัดการข้อมูลเครือข่ายทีม SRRT</h1>
                     <div class="flex items-center space-x-4">
-                        <h1 class="text-xl font-bold">ทีมเฝ้าระวังสอบสวนเคลื่อนที่เร็ว กรุงเทพมหานคร</h1>
-                    </div>
-                    <div class="flex items-center space-x-4">
-                        <span id="currentUser" class="text-sm"></span>
-                        <button id="logoutBtn" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">ออกจากระบบ</button>
+                        <span id="currentUserName" class="text-sm"></span>
+                        <button onclick="logout()" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">
+                            ออกจากระบบ
+                        </button>
                     </div>
                 </div>
-                <div class="flex space-x-1 pb-4" id="navTabs">
-                    <!-- Navigation tabs will be populated by JavaScript -->
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="bg-medium-green text-white">
+            <div class="container mx-auto px-4">
+                <div class="flex space-x-8">
+                    <button class="tab-button py-3 px-4 hover:bg-light-green border-b-2 border-transparent" 
+                            data-tab="members" onclick="showTab('members')">
+                        จัดการสมาชิกในทีม
+                    </button>
+                    <button class="tab-button py-3 px-4 hover:bg-light-green border-b-2 border-transparent admin-only" 
+                            data-tab="officers" onclick="showTab('officers')">
+                        ข้อมูลเจ้าหน้าที่
+                    </button>
+                    <button class="tab-button py-3 px-4 hover:bg-light-green border-b-2 border-transparent admin-only" 
+                            data-tab="organizations" onclick="showTab('organizations')">
+                        ข้อมูลหน่วยงาน
+                    </button>
+                    <button class="tab-button py-3 px-4 hover:bg-light-green border-b-2 border-transparent admin-only" 
+                            data-tab="users" onclick="showTab('users')">
+                        จัดการบัญชีผู้ใช้
+                    </button>
+                    <button class="tab-button py-3 px-4 hover:bg-light-green border-b-2 border-transparent admin-only" 
+                            data-tab="activity" onclick="showTab('activity')">
+                        กิจกรรมล่าสุด
+                    </button>
                 </div>
             </div>
         </nav>
 
         <!-- Content Area -->
-        <div class="max-w-7xl mx-auto px-4 py-6">
-            <!-- Officer Dashboard -->
-            <div id="officerDashboard" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
-                    <h2 class="text-xl font-bold text-dark-green mb-6">ข้อมูลเครือข่ายทีม SRRT</h2>
-                    <!-- Search and Filter Section -->
-                    <div class="mb-6 bg-gray-50 p-4 rounded-lg">
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาข้อมูล</label>
-                                <input type="text" id="officerSearch" placeholder="ค้นหาจากชื่อ รหัสเจ้าหน้าที่ หรือหน่วยงาน..." class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onkeyup="searchOfficers()">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามหน่วยงาน</label>
-                                <select id="orgFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
-                                    <option value="">ทุกหน่วยงาน</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามสถานะการอบรม</label>
-                                <select id="trainingFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
-                                    <option value="">ทุกสถานะ</option>
-                                    <option value="trained">ผ่านการอบรมแล้ว</option>
-                                    <option value="not-trained">ยังไม่ผ่านการอบรม</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Organization blocks will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Team Management -->
-            <div id="teamManagement" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-bold text-dark-green mb-4">จัดการข้อมูลทีม</h2>
-                    
-                    <!-- Team Summary Section -->
-                    <div class="bg-gradient-to-r from-blue-50 to-green-50 rounded-lg p-6 mb-6">
-                        <h3 class="text-lg font-bold text-dark-green mb-4">สรุปข้อมูลทีม</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-white rounded-lg p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-gray-600 text-sm">จำนวนสมาชิกทั้งหมด</p>
-                                        <p class="text-2xl font-bold text-blue-600" id="teamTotalMembers">-</p>
-                                        <p class="text-gray-500 text-sm">คน</p>
-                                    </div>
-                                    <div class="text-3xl opacity-70">👥</div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-lg p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-gray-600 text-sm">ผ่านการอบรมแล้ว</p>
-                                        <p class="text-2xl font-bold text-green-600" id="teamTrainedMembers">-</p>
-                                        <p class="text-gray-500 text-sm">คน</p>
-                                    </div>
-                                    <div class="text-3xl opacity-70">✅</div>
-                                </div>
-                            </div>
-                            <div class="bg-white rounded-lg p-4 shadow-sm">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-gray-600 text-sm">เปอร์เซ็นต์ที่ผ่านการอบรม</p>
-                                        <p class="text-2xl font-bold text-purple-600" id="teamTrainingPercentage">-</p>
-                                        <p class="text-gray-500 text-sm">%</p>
-                                    </div>
-                                    <div class="text-3xl opacity-70">📊</div>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="mt-4">
-                            <div class="flex items-center justify-between mb-2">
-                                <span class="text-sm text-gray-600">ความคืบหน้าการอบรม</span>
-                                <span class="text-sm font-medium text-gray-700" id="teamProgressText">-</span>
-                            </div>
-                            <div class="w-full bg-gray-200 rounded-full h-3">
-                                <div class="bg-gradient-to-r from-green-400 to-green-600 h-3 rounded-full transition-all duration-500" id="teamProgressBar" style="width: 0%"></div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">รหัสหน่วยงาน</label>
-                            <p class="text-lg font-semibold text-dark-green">BMA001</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">หน่วยงาน</label>
-                            <p class="text-lg font-semibold text-dark-green">สำนักงานเขตบางรัก</p>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">โทรศัพท์</label>
-                            <input type="text" id="editPhone" value="02-234-5678" class="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">โทรสาร</label>
-                            <input type="text" id="editFax" value="02-234-5679" class="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">อีเมล</label>
-                            <input type="email" id="editEmail" value="bangrak@bma.go.th" class="w-full px-3 py-1 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
-                        </div>
-                    </div>
-                    <button onclick="saveOrgInfo()" class="bg-medium-green text-white px-4 py-2 rounded hover:bg-dark-green mb-6">บันทึกข้อมูลหน่วยงาน</button>
-                    
+        <main class="container mx-auto px-4 py-6">
+            <!-- Team Members Tab -->
+            <div id="members" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-bold text-dark-green">จัดการสมาชิกในทีม</h3>
-                        <button onclick="showAddMemberModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มสมาชิกใหม่</button>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">รหัสเจ้าหน้าที่</th>
-                                    <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                    <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
-                                    <th class="px-4 py-2 text-left">อีเมล</th>
-                                    <th class="px-4 py-2 text-center">การอบรม</th>
-                                    <th class="px-4 py-2 text-center">จัดการ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="teamTableBody">
-                                <!-- Team members will be populated here -->
-                            </tbody>
-                        </table>
+                        <h2 class="text-xl font-semibold">จัดการสมาชิกในทีม</h2>
+                        <button onclick="showAddMemberModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            เพิ่มสมาชิกใหม่
+                        </button>
                     </div>
                     
+                    <!-- Search and Filter for Team Members -->
+                    <div class="mb-4 flex gap-4">
+                        <div class="flex-1">
+                            <input type="text" id="memberSearch" placeholder="ค้นหาสมาชิก..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   onkeyup="filterMembers()">
+                        </div>
+                        <select id="memberFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                onchange="filterMembers()">
+                            <option value="">ทั้งหมด</option>
+                            <option value="2023">2023</option>
+                            <option value="2024">2024</option>
+                        </select>
+                    </div>
+
                     <!-- Confirmation Section -->
-                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
-                        <div class="flex items-center justify-between">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                        <h3 class="text-lg font-semibold text-blue-800 mb-2">สถานะการยืนยันข้อมูล</h3>
+                        <div class="grid grid-cols-2 gap-4 mb-4">
                             <div>
-                                <h4 class="text-lg font-semibold text-dark-green">การยืนยันข้อมูล</h4>
-                                <p class="text-sm text-gray-600 mt-1">ยืนยันข้อมูลทีมและหน่วยงานเพื่อส่งให้ผู้ดูแลระบบตรวจสอบ</p>
+                                <span class="text-sm text-gray-600">สถานะข้อมูลทีม:</span>
+                                <span id="teamConfirmStatus" class="ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600">รอยืนยัน</span>
                             </div>
-                            <div class="flex space-x-3">
-                                <div class="text-center">
-                                    <div class="text-sm text-gray-600">สถานะข้อมูลทีม:</div>
-                                    <span id="teamConfirmStatus" class="inline-block px-3 py-1 rounded text-sm font-medium">-</span>
-                                </div>
-                                <div class="text-center">
-                                    <div class="text-sm text-gray-600">สถานะข้อมูลหน่วยงาน:</div>
-                                    <span id="orgConfirmStatus" class="inline-block px-3 py-1 rounded text-sm font-medium">-</span>
-                                </div>
-                                <button id="confirmTeamDataBtn" onclick="confirmTeamData()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
-                                    ยืนยันข้อมูล
-                                </button>
+                            <div>
+                                <span class="text-sm text-gray-600">สถานะข้อมูลหน่วยงาน:</span>
+                                <span id="orgConfirmStatus" class="ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600">รอยืนยัน</span>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <!-- Admin - Summary Report -->
-            <div id="summaryReport" class="tab-content hidden">
-                <div class="space-y-6">
-                    <!-- ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร -->
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-blue-100 text-sm">จำนวนทีม</p>
-                                        <p class="text-3xl font-bold" id="totalTeams">-</p>
-                                        <p class="text-blue-100 text-sm">ทีม</p>
-                                    </div>
-                                    <div class="text-4xl opacity-80">🏢</div>
-                                </div>
-                            </div>
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-green-100 text-sm">จำนวนเจ้าหน้าที่ในปัจจุบัน</p>
-                                        <p class="text-3xl font-bold" id="totalOfficers">-</p>
-                                        <p class="text-green-100 text-sm">คน</p>
-                                    </div>
-                                    <div class="text-4xl opacity-80">👥</div>
-                                </div>
-                            </div>
+                        <div class="flex justify-center">
+                            <button id="confirmTeamDataBtn" onclick="confirmTeamData()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                ยืนยันข้อมูล
+                            </button>
                         </div>
                     </div>
+                    
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ-นามสกุล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อีเมล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การอบรม</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="membersTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic content will be inserted here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
-                    <!-- ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน -->
-                    <div class="bg-white rounded-lg shadow-lg p-6">
-                        <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน</h2>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full bg-white border border-gray-200">
-                                <thead class="bg-medium-green text-white">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                        <th class="px-4 py-2 text-center">จำนวนสมาชิกในทีม</th>
-                                        <th class="px-4 py-2 text-center">ผ่านการอบรมแล้ว</th>
-                                        <th class="px-4 py-2 text-center">เปอร์เซ็นต์ที่ผ่านการอบรม</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="orgSummaryTableBody">
-                                    <!-- Organization summary will be populated here -->
-                                </tbody>
-                            </table>
+            <!-- Officers Tab -->
+            <div id="officers" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">ข้อมูลเจ้าหน้าที่</h2>
+                        <button onclick="showAddOfficerModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            เพิ่มเจ้าหน้าที่ใหม่
+                        </button>
+                    </div>
+                    
+                    <!-- Search and Filter for Officers -->
+                    <div class="mb-4 flex gap-4">
+                        <div class="flex-1">
+                            <input type="text" id="officerSearch" placeholder="ค้นหาเจ้าหน้าที่..." 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                                   onkeyup="filterOfficers()">
                         </div>
+                        <select id="officerOrgFilter" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500" 
+                                onchange="filterOfficers()">
+                            <option value="">ทุกหน่วยงาน</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-
-            <!-- Admin - All Officers Database -->
-            <div id="allOfficersDB" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-dark-green">ฐานข้อมูลเจ้าหน้าที่</h2>
-                        <button onclick="showAddOfficerModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มเจ้าหน้าที่ใหม่</button>
-                    </div>
+                    
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">รหัสเจ้าหน้าที่</th>
-                                    <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                    <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
-                                    <th class="px-4 py-2 text-left">อีเมล</th>
-                                    <th class="px-4 py-2 text-center">สถานะการยืนยัน</th>
-                                    <th class="px-4 py-2 text-center">จัดการ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัส</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ-นามสกุล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อีเมล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หน่วยงาน</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะการยืนยัน</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="allOfficersTableBody">
-                                <!-- All officers will be populated here -->
+                            <tbody id="officersTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic content will be inserted here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Admin - Training Database -->
-            <div id="trainingDB" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-dark-green">ฐานข้อมูลการอบรม</h2>
-                        <div class="flex space-x-2">
-                            <button onclick="showAddYearModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">เพิ่มปี</button>
-                        </div>
+            <!-- Organizations Tab -->
+            <div id="organizations" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">ข้อมูลหน่วยงาน</h2>
+                        <button onclick="showAddOrgModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            เพิ่มหน่วยงานใหม่
+                        </button>
                     </div>
+                    
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">รหัสเจ้าหน้าที่</th>
-                                    <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                    <th class="px-4 py-2 text-center">2023</th>
-                                    <th class="px-4 py-2 text-center">2024</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รหัส</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อหน่วยงาน</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เบอร์โทรศัพท์</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">แฟกซ์</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">อีเมล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะการยืนยัน</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="trainingTableBody">
-                                <!-- Training data will be populated here -->
+                            <tbody id="organizationsTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic content will be inserted here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Admin - Organizations Database -->
-            <div id="organizationsDB" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-dark-green">ฐานข้อมูลหน่วยงาน</h2>
-                        <button onclick="showAddOrgModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มหน่วยงานใหม่</button>
+            <!-- Users Tab -->
+            <div id="users" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-semibold">จัดการบัญชีผู้ใช้</h2>
+                        <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">
+                            เพิ่มบัญชีใหม่
+                        </button>
                     </div>
+                    
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">รหัสหน่วยงาน</th>
-                                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                    <th class="px-4 py-2 text-left">โทรศัพท์</th>
-                                    <th class="px-4 py-2 text-left">โทรสาร</th>
-                                    <th class="px-4 py-2 text-left">อีเมล</th>
-                                    <th class="px-4 py-2 text-center">สถานะการยืนยัน</th>
-                                    <th class="px-4 py-2 text-center">จัดการ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อผู้ใช้</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ชื่อ-นามสกุล</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">บทบาท</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">หน่วยงาน</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">จัดการ</th>
                                 </tr>
                             </thead>
-                            <tbody id="organizationsTableBody">
-                                <!-- Organizations will be populated here -->
+                            <tbody id="usersTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic content will be inserted here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
 
-            <!-- Admin - User Accounts -->
-            <div id="userAccounts" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-xl font-bold text-dark-green">บัญชีผู้ใช้งาน</h2>
-                        <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มบัญชีใหม่</button>
-                    </div>
+            <!-- Activity Tab -->
+            <div id="activity" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow p-6">
+                    <h2 class="text-xl font-semibold mb-4">กิจกรรมล่าสุด</h2>
+                    
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
+                        <table class="min-w-full table-auto">
+                            <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-4 py-2 text-left">ชื่อ-นามสกุล</th>
-                                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                    <th class="px-4 py-2 text-left">Username</th>
-                                    <th class="px-4 py-2 text-left">Password</th>
-                                    <th class="px-4 py-2 text-left">ระดับการเข้าถึง</th>
-                                    <th class="px-4 py-2 text-center">จัดการ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">วันที่</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">เวลา</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ผู้ใช้</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">การกระทำ</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">รายละเอียด</th>
+                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">สถานะ</th>
                                 </tr>
                             </thead>
-                            <tbody id="userAccountsTableBody">
-                                <!-- User accounts will be populated here -->
+                            <tbody id="activityTableBody" class="bg-white divide-y divide-gray-200">
+                                <!-- Dynamic content will be inserted here -->
                             </tbody>
                         </table>
                     </div>
                 </div>
             </div>
-
-            <!-- Admin - Activity Log -->
-            <div id="activityLog" class="tab-content hidden">
-                <div class="bg-white rounded-lg shadow-lg p-6">
-                    <h2 class="text-xl font-bold text-dark-green mb-6">ประวัติการจัดการข้อมูล</h2>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white">
-                                <tr>
-                                    <th class="px-4 py-2 text-left">วันที่</th>
-                                    <th class="px-4 py-2 text-left">เวลา</th>
-                                    <th class="px-4 py-2 text-left">ผู้ใช้งาน</th>
-                                    <th class="px-4 py-2 text-left">การกระทำ</th>
-                                    <th class="px-4 py-2 text-left">รายละเอียด</th>
-                                    <th class="px-4 py-2 text-center">สถานะ</th>
-                                </tr>
-                            </thead>
-                            <tbody id="activityLogTableBody">
-                                <!-- Activity log will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Modals -->
-    <div id="modalOverlay" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-        <div class="flex items-center justify-center min-h-screen p-4">
-            <div id="modalContent" class="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-                <!-- Modal content will be populated by JavaScript -->
-            </div>
-        </div>
+        </main>
     </div>
 
     <script>
-        // Sample data
+        // Firebase data variables
         let currentUser = null;
         let userRole = null;
         
-        const users = [
-            { username: 'officer1', password: 'pass123', name: 'นายสมชาย ใจดี', role: 'officer', orgId: 'BMA001' },
-            { username: 'admin1', password: 'admin123', name: 'นายผู้ดูแล ระบบ', role: 'admin', orgId: 'BMA000' }
-        ];
+        let users = [];
+        let organizations = [];
+        let officers = [];
+        let trainingData = {};
+        let activityLog = [];
+        let confirmationStatus = {};
+        
+        // Firebase database initialization and data setup
+        async function initializeFirebaseData() {
+            try {
+                // Check if data exists, if not, populate with sample data
+                const snapshot = await firebaseGet(firebaseChild(firebaseRef(window.firebaseDB), 'initialized'));
+                
+                if (!snapshot.exists()) {
+                    // Initialize with sample data
+                    const sampleData = {
+                        users: [
+                            { username: 'officer1', password: 'pass123', name: 'นายสมชาย ใจดี', role: 'officer', orgId: 'BMA001' },
+                            { username: 'admin1', password: 'admin123', name: 'นายผู้ดูแล ระบบ', role: 'admin', orgId: 'BMA000' }
+                        ],
+                        organizations: [
+                            { id: 'BMA001', name: 'สำนักงานเขตบางรัก', phone: '02-234-5678', fax: '02-234-5679', email: 'bangrak@bma.go.th' },
+                            { id: 'BMA002', name: 'สำนักงานเขตสาทร', phone: '02-234-5680', fax: '02-234-5681', email: 'sathorn@bma.go.th' },
+                            { id: 'BMA003', name: 'สำนักงานเขตวัฒนา', phone: '02-234-5682', fax: '02-234-5683', email: 'watthana@bma.go.th' },
+                            { id: 'BMA004', name: 'สำนักงานเขตคลองเตย', phone: '02-234-5684', fax: '02-234-5685', email: 'klongtoey@bma.go.th' }
+                        ],
+                        officers: [
+                            { id: 'OFF001', name: 'นายสมชาย ใจดี', phone: '081-234-5678', email: 'somchai@bma.go.th', orgId: 'BMA001' },
+                            { id: 'OFF002', name: 'นางสาวมาลี สวยงาม', phone: '081-234-5679', email: 'malee@bma.go.th', orgId: 'BMA001' },
+                            { id: 'OFF003', name: 'นายสมศักดิ์ ขยัน', phone: '081-234-5680', email: 'somsak@bma.go.th', orgId: 'BMA002' },
+                            { id: 'OFF004', name: 'นางสุดา เก่งกาจ', phone: '081-234-5681', email: 'suda@bma.go.th', orgId: 'BMA002' },
+                            { id: 'OFF005', name: 'นายวิชัย มั่นคง', phone: '081-234-5682', email: 'wichai@bma.go.th', orgId: 'BMA002' },
+                            { id: 'OFF006', name: 'นางสาวนิตยา ฉลาด', phone: '081-234-5683', email: 'nitaya@bma.go.th', orgId: 'BMA003' },
+                            { id: 'OFF007', name: 'นายประยุทธ์ รอบรู้', phone: '081-234-5684', email: 'prayuth@bma.go.th', orgId: 'BMA003' },
+                            { id: 'OFF008', name: 'นางอรุณี สดใส', phone: '081-234-5685', email: 'arunee@bma.go.th', orgId: 'BMA003' },
+                            { id: 'OFF009', name: 'นายสุรชัย ดีเด่น', phone: '081-234-5686', email: 'surachai@bma.go.th', orgId: 'BMA004' },
+                            { id: 'OFF010', name: 'นางสาวพิมพ์ใจ อ่อนโยน', phone: '081-234-5687', email: 'pimjai@bma.go.th', orgId: 'BMA004' },
+                            { id: 'OFF011', name: 'นายธนากร เฉียบแหลม', phone: '081-234-5688', email: 'thanakorn@bma.go.th', orgId: 'BMA004' }
+                        ],
+                        trainingData: {
+                            'OFF001': { '2023': ['หลักสูตรการสอบสวน'], '2024': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'] },
+                            'OFF002': { '2023': [], '2024': ['หลักสูตรการสอบสวน'] },
+                            'OFF003': { '2023': ['หลักสูตรกฎหมาย'], '2024': [] },
+                            'OFF004': { '2023': ['หลักสูตรการสอบสวน', 'หลักสูตรการจัดการ'], '2024': ['หลักสูตรเทคโนโลยี'] },
+                            'OFF005': { '2023': ['หลักสูตรกฎหมาย'], '2024': ['หลักสูตรการสอบสวน', 'หลักสูตรการจัดการ'] },
+                            'OFF006': { '2023': [], '2024': ['หลักสูตรกฎหมาย'] },
+                            'OFF007': { '2023': ['หลักสูตรเทคโนโลยี'], '2024': ['หลักสูตรการสอบสวน'] },
+                            'OFF008': { '2023': ['หลักสูตรการจัดการ'], '2024': [] },
+                            'OFF009': { '2023': ['หลักสูตรการสอบสวน'], '2024': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'] },
+                            'OFF010': { '2023': [], '2024': ['หลักสูตรการจัดการ'] },
+                            'OFF011': { '2023': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'], '2024': ['หลักสูตรการสอบสวน'] }
+                        },
+                        activityLog: [
+                            { date: '2024-01-15', time: '09:30', user: 'admin1', action: 'เพิ่ม', detail: 'เพิ่มเจ้าหน้าที่ใหม่: นายสมศักดิ์ ขยัน', status: 'รอยืนยัน' },
+                            { date: '2024-01-14', time: '14:20', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขเบอร์โทรศัพท์ | เดิม: 081-234-5678 | เปลี่ยนเป็น: 081-999-8888', status: 'รอยืนยัน' },
+                            { date: '2024-01-13', time: '16:45', user: 'admin1', action: 'ลบ', detail: 'ลบเจ้าหน้าที่: นายทดสอบ ระบบ (OFF999)', status: 'รับทราบ' },
+                            { date: '2024-01-12', time: '11:20', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขข้อมูลการอบรม OFF001 ปี 2024 | เดิม: หลักสูตรกฎหมาย | เปลี่ยนเป็น: หลักสูตรกฎหมาย, หลักสูตรเทคโนโลยี', status: 'รับทราบ' },
+                            { date: '2024-01-11', time: '15:30', user: 'admin1', action: 'แก้ไข', detail: 'แก้ไขข้อมูลหน่วยงาน BMA001 | เดิม: อีเมล bangrak@bma.go.th | เปลี่ยนเป็น: bangrak.new@bma.go.th', status: 'รอยืนยัน' },
+                            { date: '2024-01-10', time: '10:15', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขชื่อเจ้าหน้าที่ OFF002 | เดิม: นางสาวมาลี สวยงาม | เปลี่ยนเป็น: นางมาลี สวยงาม', status: 'รับทราบ' }
+                        ],
+                        confirmationStatus: {
+                            'BMA001': { teamConfirmed: false, orgConfirmed: false },
+                            'BMA002': { teamConfirmed: false, orgConfirmed: false },
+                            'BMA003': { teamConfirmed: false, orgConfirmed: false },
+                            'BMA004': { teamConfirmed: false, orgConfirmed: false }
+                        },
+                        initialized: true
+                    };
+                    
+                    // Save sample data to Firebase
+                    await firebaseSet(firebaseRef(window.firebaseDB), sampleData);
+                    console.log('Sample data initialized in Firebase');
+                }
+                
+                // Load data from Firebase
+                await loadDataFromFirebase();
+                
+            } catch (error) {
+                console.error('Error initializing Firebase data:', error);
+            }
+        }
+        
+        // Load all data from Firebase
+        async function loadDataFromFirebase() {
+            try {
+                const snapshot = await firebaseGet(firebaseChild(firebaseRef(window.firebaseDB), '/'));
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    users = data.users || [];
+                    organizations = data.organizations || [];
+                    officers = data.officers || [];
+                    trainingData = data.trainingData || {};
+                    activityLog = data.activityLog || [];
+                    confirmationStatus = data.confirmationStatus || {};
+                }
+            } catch (error) {
+                console.error('Error loading data from Firebase:', error);
+            }
+        }
+        
+        // Save data to Firebase
+        async function saveDataToFirebase(path, data) {
+            try {
+                await firebaseSet(firebaseRef(window.firebaseDB, path), data);
+            } catch (error) {
+                console.error('Error saving data to Firebase:', error);
+            }
+        }
 
-        const organizations = [
-            { id: 'BMA001', name: 'สำนักงานเขตบางรัก', phone: '02-234-5678', fax: '02-234-5679', email: 'bangrak@bma.go.th' },
-            { id: 'BMA002', name: 'สำนักงานเขตสาทร', phone: '02-234-5680', fax: '02-234-5681', email: 'sathorn@bma.go.th' },
-            { id: 'BMA003', name: 'สำนักงานเขตวัฒนา', phone: '02-234-5682', fax: '02-234-5683', email: 'watthana@bma.go.th' },
-            { id: 'BMA004', name: 'สำนักงานเขตคลองเตย', phone: '02-234-5684', fax: '02-234-5685', email: 'klongtoey@bma.go.th' }
-        ];
-
-        const officers = [
-            { id: 'OFF001', name: 'นายสมชาย ใจดี', phone: '081-234-5678', email: 'somchai@bma.go.th', orgId: 'BMA001' },
-            { id: 'OFF002', name: 'นางสาวมาลี สวยงาม', phone: '081-234-5679', email: 'malee@bma.go.th', orgId: 'BMA001' },
-            { id: 'OFF003', name: 'นายสมศักดิ์ ขยัน', phone: '081-234-5680', email: 'somsak@bma.go.th', orgId: 'BMA002' },
-            { id: 'OFF004', name: 'นางสุดา เก่งกาจ', phone: '081-234-5681', email: 'suda@bma.go.th', orgId: 'BMA002' },
-            { id: 'OFF005', name: 'นายวิชัย มั่นคง', phone: '081-234-5682', email: 'wichai@bma.go.th', orgId: 'BMA002' },
-            { id: 'OFF006', name: 'นางสาวนิตยา ฉลาด', phone: '081-234-5683', email: 'nitaya@bma.go.th', orgId: 'BMA003' },
-            { id: 'OFF007', name: 'นายประยุทธ์ รอบรู้', phone: '081-234-5684', email: 'prayuth@bma.go.th', orgId: 'BMA003' },
-            { id: 'OFF008', name: 'นางอรุณี สดใส', phone: '081-234-5685', email: 'arunee@bma.go.th', orgId: 'BMA003' },
-            { id: 'OFF009', name: 'นายสุรชัย ดีเด่น', phone: '081-234-5686', email: 'surachai@bma.go.th', orgId: 'BMA004' },
-            { id: 'OFF010', name: 'นางสาวพิมพ์ใจ อ่อนโยน', phone: '081-234-5687', email: 'pimjai@bma.go.th', orgId: 'BMA004' },
-            { id: 'OFF011', name: 'นายธนากร เฉียบแหลม', phone: '081-234-5688', email: 'thanakorn@bma.go.th', orgId: 'BMA004' }
-        ];
-
-        const trainingData = {
-            'OFF001': { '2023': ['หลักสูตรการสอบสวน'], '2024': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'] },
-            'OFF002': { '2023': [], '2024': ['หลักสูตรการสอบสวน'] },
-            'OFF003': { '2023': ['หลักสูตรกฎหมาย'], '2024': [] },
-            'OFF004': { '2023': ['หลักสูตรการสอบสวน', 'หลักสูตรการจัดการ'], '2024': ['หลักสูตรเทคโนโลยี'] },
-            'OFF005': { '2023': ['หลักสูตรกฎหมาย'], '2024': ['หลักสูตรการสอบสวน', 'หลักสูตรการจัดการ'] },
-            'OFF006': { '2023': [], '2024': ['หลักสูตรกฎหมาย'] },
-            'OFF007': { '2023': ['หลักสูตรเทคโนโลยี'], '2024': ['หลักสูตรการสอบสวน'] },
-            'OFF008': { '2023': ['หลักสูตรการจัดการ'], '2024': [] },
-            'OFF009': { '2023': ['หลักสูตรการสอบสวน'], '2024': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'] },
-            'OFF010': { '2023': [], '2024': ['หลักสูตรการจัดการ'] },
-            'OFF011': { '2023': ['หลักสูตรกฎหมาย', 'หลักสูตรเทคโนโลยี'], '2024': ['หลักสูตรการสอบสวน'] }
-        };
-
-        const activityLog = [
-            { date: '2024-01-15', time: '09:30', user: 'admin1', action: 'เพิ่ม', detail: 'เพิ่มเจ้าหน้าที่ใหม่: นายสมศักดิ์ ขยัน', status: 'รอยืนยัน' },
-            { date: '2024-01-14', time: '14:20', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขเบอร์โทรศัพท์ | เดิม: 081-234-5678 | เปลี่ยนเป็น: 081-999-8888', status: 'รอยืนยัน' },
-            { date: '2024-01-13', time: '16:45', user: 'admin1', action: 'ลบ', detail: 'ลบเจ้าหน้าที่: นายทดสอบ ระบบ (OFF999)', status: 'รับทราบ' },
-            { date: '2024-01-12', time: '11:20', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขข้อมูลการอบรม OFF001 ปี 2024 | เดิม: หลักสูตรกฎหมาย | เปลี่ยนเป็น: หลักสูตรกฎหมาย, หลักสูตรเทคโนโลยี', status: 'รับทราบ' },
-            { date: '2024-01-11', time: '15:30', user: 'admin1', action: 'แก้ไข', detail: 'แก้ไขข้อมูลหน่วยงาน BMA001 | เดิม: อีเมล bangrak@bma.go.th | เปลี่ยนเป็น: bangrak.new@bma.go.th', status: 'รอยืนยัน' },
-            { date: '2024-01-10', time: '10:15', user: 'officer1', action: 'แก้ไข', detail: 'แก้ไขชื่อเจ้าหน้าที่ OFF002 | เดิม: นางสาวมาลี สวยงาม | เปลี่ยนเป็น: นางมาลี สวยงาม', status: 'รับทราบ' }
-        ];
-
-        // Confirmation status for each organization
-        const confirmationStatus = {
-            'BMA001': { teamConfirmed: false, orgConfirmed: false },
-            'BMA002': { teamConfirmed: false, orgConfirmed: false },
-            'BMA003': { teamConfirmed: false, orgConfirmed: false },
-            'BMA004': { teamConfirmed: false, orgConfirmed: false }
-        };
-
-        // Login functionality
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Authentication and User Management Functions
+        async function login() {
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
+            await loadDataFromFirebase();
             const user = users.find(u => u.username === username && u.password === password);
             
             if (user) {
                 currentUser = user;
                 userRole = user.role;
-                document.getElementById('loginPage').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('currentUser').textContent = user.name;
-                setupNavigation();
-                showDefaultTab();
-                logActivity('เข้าสู่ระบบ', 'เข้าสู่ระบบสำเร็จ');
+                showDashboard(user.role);
             } else {
-                document.getElementById('loginError').textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
-                document.getElementById('loginError').classList.remove('hidden');
-            }
-        });
-
-        // Logout functionality
-        document.getElementById('logoutBtn').addEventListener('click', function() {
-            logActivity('ออกจากระบบ', 'ออกจากระบบ');
-            currentUser = null;
-            userRole = null;
-            document.getElementById('mainApp').classList.add('hidden');
-            document.getElementById('loginPage').classList.remove('hidden');
-            document.getElementById('username').value = '';
-            document.getElementById('password').value = '';
-            document.getElementById('loginError').classList.add('hidden');
-        });
-
-        // Setup navigation based on user role
-        function setupNavigation() {
-            const navTabs = document.getElementById('navTabs');
-            navTabs.innerHTML = '';
-            
-            if (userRole === 'officer') {
-                navTabs.innerHTML = `
-                    <button onclick="showTab('officerDashboard')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลเครือข่ายทีม SRRT</button>
-                    <button onclick="showTab('teamManagement')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลทีม</button>
-                `;
-            } else if (userRole === 'admin') {
-                navTabs.innerHTML = `
-                    <button onclick="showTab('summaryReport')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">สรุปข้อมูล</button>
-                    <button onclick="showTab('allOfficersDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลเจ้าหน้าที่</button>
-                    <button onclick="showTab('trainingDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลการอบรม</button>
-                    <button onclick="showTab('organizationsDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลหน่วยงาน</button>
-                    <button onclick="showTab('userAccounts')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">บัญชีผู้ใช้งาน</button>
-                    <button onclick="showTab('activityLog')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ประวัติการจัดการข้อมูล</button>
-                `;
+                alert('ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง');
             }
         }
 
-        // Show tab functionality
-        function showTab(tabId) {
-            // Hide all tabs
-            document.querySelectorAll('.tab-content').forEach(tab => {
-                tab.classList.add('hidden');
+        function showDashboard(role) {
+            document.getElementById('loginPage').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            document.getElementById('currentUserName').textContent = currentUser.name;
+            
+            // Show/hide nav items based on role
+            const adminNavs = document.querySelectorAll('.admin-only');
+            adminNavs.forEach(nav => {
+                nav.style.display = role === 'admin' ? 'block' : 'none';
             });
             
-            // Remove active class from all nav tabs
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.classList.remove('bg-medium-green');
+            // Show first appropriate tab
+            if (role === 'officer') {
+                showTab('members');
+                loadTeamMembersData();
+            } else {
+                showTab('officers');
+                loadAllOfficersData();
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            userRole = null;
+            document.getElementById('dashboard').style.display = 'none';
+            document.getElementById('loginPage').style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+        }
+
+        // Tab Management
+        function showTab(tabName) {
+            // Hide all tabs
+            const tabs = document.querySelectorAll('.tab-content');
+            tabs.forEach(tab => tab.classList.add('hidden'));
+            
+            // Remove active class from all tab buttons
+            const buttons = document.querySelectorAll('.tab-button');
+            buttons.forEach(button => {
+                button.classList.remove('border-white');
+                button.classList.add('border-transparent');
             });
             
             // Show selected tab
-            document.getElementById(tabId).classList.remove('hidden');
+            document.getElementById(tabName).classList.remove('hidden');
             
-            // Add active class to clicked nav tab
-            event.target.classList.add('bg-medium-green');
-            
-            // Load data for the tab
-            loadTabData(tabId);
-        }
-
-        // Show default tab based on user role
-        function showDefaultTab() {
-            if (userRole === 'officer') {
-                showTab('officerDashboard');
-            } else if (userRole === 'admin') {
-                showTab('summaryReport');
+            // Add active class to selected button
+            const activeButton = document.querySelector(`[data-tab="${tabName}"]`);
+            if (activeButton) {
+                activeButton.classList.add('border-white');
+                activeButton.classList.remove('border-transparent');
             }
-        }
-
-        // Load data for specific tabs
-        function loadTabData(tabId) {
-            switch(tabId) {
-                case 'summaryReport':
-                    loadSummaryReportData();
+            
+            // Load appropriate data
+            switch(tabName) {
+                case 'members':
+                    loadTeamMembersData();
                     break;
-                case 'officerDashboard':
-                    loadOfficerDashboardData();
-                    break;
-                case 'teamManagement':
-                    loadTeamData();
-                    break;
-                case 'allOfficersDB':
+                case 'officers':
                     loadAllOfficersData();
                     break;
-                case 'trainingDB':
-                    loadTrainingData();
-                    break;
-                case 'organizationsDB':
+                case 'organizations':
                     loadOrganizationsData();
                     break;
-                case 'userAccounts':
-                    loadUserAccountsData();
+                case 'users':
+                    loadUsersData();
                     break;
-                case 'activityLog':
-                    loadActivityLogData();
+                case 'activity':
+                    loadActivityData();
                     break;
             }
         }
 
-        // Load summary report data
-        function loadSummaryReportData() {
-            // ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร
-            const totalTeams = organizations.length;
-            const totalOfficers = officers.length;
+        // Data Loading Functions
+        function loadTeamMembersData() {
+            if (!currentUser) return;
             
-            document.getElementById('totalTeams').textContent = totalTeams;
-            document.getElementById('totalOfficers').textContent = totalOfficers;
+            const userOrgOfficers = officers.filter(officer => officer.orgId === currentUser.orgId);
+            const tbody = document.getElementById('membersTableBody');
             
-            // ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน
-            const tbody = document.getElementById('orgSummaryTableBody');
-            tbody.innerHTML = organizations.map(org => {
-                const orgOfficers = officers.filter(officer => officer.orgId === org.id);
-                const totalMembers = orgOfficers.length;
-                
-                // นับจำนวนคนที่ผ่านการอบรม (มีการอบรมอย่างน้อย 1 หลักสูตรในปีใดปีหนึ่ง)
-                let trainedMembers = 0;
-                orgOfficers.forEach(officer => {
-                    const training = trainingData[officer.id];
-                    if (training) {
-                        const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
-                        if (hasTraining) {
-                            trainedMembers++;
-                        }
-                    }
-                });
-                
-                const trainingPercentage = totalMembers > 0 ? Math.round((trainedMembers / totalMembers) * 100) : 0;
+            tbody.innerHTML = userOrgOfficers.map(officer => {
+                const training2023 = trainingData[officer.id]?.['2023'] || [];
+                const training2024 = trainingData[officer.id]?.['2024'] || [];
+                const allTraining = [...training2023, ...training2024];
                 
                 return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${org.name}</td>
-                        <td class="px-4 py-2 text-center">${totalMembers}</td>
-                        <td class="px-4 py-2 text-center">${trainedMembers}</td>
-                        <td class="px-4 py-2 text-center">
-                            <div class="flex items-center justify-center">
-                                <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
-                                    <div class="bg-green-500 h-2 rounded-full" style="width: ${trainingPercentage}%"></div>
-                                </div>
-                                <span class="text-sm font-medium">${trainingPercentage}%</span>
-                            </div>
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.name}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.phone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.email}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">
+                            ${allTraining.length > 0 ? allTraining.join(', ') : 'ไม่มีข้อมูล'}
+                        </td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editMember('${officer.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                            <button onclick="deleteMember('${officer.id}')" class="text-red-600 hover:text-red-900">ลบ</button>
                         </td>
                     </tr>
                 `;
             }).join('');
-        }
-
-        // Load officer dashboard data
-        function loadOfficerDashboardData() {
-            const container = document.querySelector('#officerDashboard .bg-white');
             
-            // Clear existing content except the header and search section
-            const header = container.querySelector('h2');
-            const searchSection = container.querySelector('.mb-6.bg-gray-50');
-            container.innerHTML = '';
-            container.appendChild(header);
-            
-            // Re-add search section if it exists
-            if (searchSection) {
-                container.appendChild(searchSection);
-            } else {
-                // Create search section if it doesn't exist
-                const searchDiv = document.createElement('div');
-                searchDiv.className = 'mb-6 bg-gray-50 p-4 rounded-lg';
-                searchDiv.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">ค้นหาข้อมูล</label>
-                            <input type="text" id="officerSearch" placeholder="ค้นหาจากชื่อ รหัสเจ้าหน้าที่ หรือหน่วยงาน..." class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onkeyup="searchOfficers()">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามหน่วยงาน</label>
-                            <select id="orgFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
-                                <option value="">ทุกหน่วยงาน</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">กรองตามสถานะการอบรม</label>
-                            <select id="trainingFilter" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" onchange="filterOfficers()">
-                                <option value="">ทุกสถานะ</option>
-                                <option value="trained">ผ่านการอบรมแล้ว</option>
-                                <option value="not-trained">ยังไม่ผ่านการอบรม</option>
-                            </select>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(searchDiv);
-            }
-            
-            // Populate organization filter dropdown
-            const orgFilter = document.getElementById('orgFilter');
-            if (orgFilter) {
-                const existingOptions = orgFilter.querySelectorAll('option:not([value=""])');
-                existingOptions.forEach(option => option.remove());
-                
-                organizations.forEach(org => {
-                    const option = document.createElement('option');
-                    option.value = org.id;
-                    option.textContent = org.name;
-                    orgFilter.appendChild(option);
-                });
-            }
-            
-            // Group officers by organization
-            const officersByOrg = {};
-            officers.forEach(officer => {
-                if (!officersByOrg[officer.orgId]) {
-                    officersByOrg[officer.orgId] = [];
-                }
-                officersByOrg[officer.orgId].push(officer);
-            });
-            
-            // Create blocks for each organization
-            organizations.forEach(org => {
-                if (officersByOrg[org.id] && officersByOrg[org.id].length > 0) {
-                    const orgBlock = document.createElement('div');
-                    orgBlock.className = 'mb-8';
-                    orgBlock.innerHTML = `
-                        <div class="bg-medium-green text-white p-4 rounded-t-lg">
-                            <h3 class="text-lg font-bold">${org.name}</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2 text-sm">
-                                <div>โทรศัพท์: ${org.phone}</div>
-                                <div>โทรสาร: ${org.fax}</div>
-                                <div>อีเมล: ${org.email}</div>
-                            </div>
-                        </div>
-                        <div class="overflow-x-auto">
-                            <table class="min-w-full bg-white border border-gray-200">
-                                <thead class="bg-gray-100">
-                                    <tr>
-                                        <th class="px-4 py-2 text-left">รหัสเจ้าหน้าที่</th>
-                                        <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                                        <th class="px-4 py-2 text-left">เบอร์โทรศัพท์</th>
-                                        <th class="px-4 py-2 text-left">อีเมล</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${officersByOrg[org.id].map(officer => `
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="px-4 py-2">${officer.id}</td>
-                                            <td class="px-4 py-2">${officer.name}</td>
-                                            <td class="px-4 py-2">${officer.phone}</td>
-                                            <td class="px-4 py-2">${officer.email}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                        </div>
-                    `;
-                    container.appendChild(orgBlock);
-                }
-            });
-        }
-
-        // Load team data
-        function loadTeamData() {
-            const tbody = document.getElementById('teamTableBody');
-            const userOrg = currentUser.orgId;
-            const teamMembers = officers.filter(officer => officer.orgId === userOrg);
-            const org = organizations.find(o => o.id === userOrg);
-            
-            // Calculate team summary
-            const totalMembers = teamMembers.length;
-            let trainedMembers = 0;
-            
-            teamMembers.forEach(officer => {
-                const training = trainingData[officer.id];
-                if (training) {
-                    const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
-                    if (hasTraining) {
-                        trainedMembers++;
-                    }
-                }
-            });
-            
-            const trainingPercentage = totalMembers > 0 ? Math.round((trainedMembers / totalMembers) * 100) : 0;
-            
-            // Update summary display
-            document.getElementById('teamTotalMembers').textContent = totalMembers;
-            document.getElementById('teamTrainedMembers').textContent = trainedMembers;
-            document.getElementById('teamTrainingPercentage').textContent = trainingPercentage;
-            document.getElementById('teamProgressText').textContent = `${trainedMembers}/${totalMembers} คน`;
-            document.getElementById('teamProgressBar').style.width = `${trainingPercentage}%`;
-            
-            // Update confirmation status display
             updateConfirmationStatusDisplay();
-            
-            // Update confirmation status display
-            updateConfirmationStatusDisplay();
-            
-            tbody.innerHTML = teamMembers.map(officer => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-2">${officer.id}</td>
-                    <td class="px-4 py-2">${officer.name}</td>
-                    <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                    <td class="px-4 py-2">${officer.phone}</td>
-                    <td class="px-4 py-2">${officer.email}</td>
-                    <td class="px-4 py-2 text-center">
-                        <button onclick="showOfficerTrainingHistory('${officer.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">ข้อมูลการอบรม</button>
-                    </td>
-                    <td class="px-4 py-2 text-center">
-                        <button onclick="editMember('${officer.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                        <button onclick="deleteMember('${officer.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
-                    </td>
-                </tr>
-            `).join('');
         }
 
-        // Load all officers data
         function loadAllOfficersData() {
-            const tbody = document.getElementById('allOfficersTableBody');
+            const tbody = document.getElementById('officersTableBody');
+            
+            // Populate organization filter
+            const orgFilter = document.getElementById('officerOrgFilter');
+            orgFilter.innerHTML = '<option value="">ทุกหน่วยงาน</option>' + 
+                organizations.map(org => `<option value="${org.id}">${org.name}</option>`).join('');
+            
             tbody.innerHTML = officers.map(officer => {
                 const org = organizations.find(o => o.id === officer.orgId);
-                const confirmStatus = confirmationStatus[officer.orgId];
-                let statusDisplay = '';
-                let statusAction = '';
-                
-                if (confirmStatus && confirmStatus.teamConfirmed) {
-                    statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
-                    statusAction = `<button onclick="resetTeamConfirmation('${officer.orgId}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
-                } else {
-                    statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
-                }
+                const orgName = org ? org.name : 'ไม่ระบุ';
+                const status = confirmationStatus[officer.orgId];
+                const confirmStatus = status && status.teamConfirmed && status.orgConfirmed ? 
+                    '<span class="inline-block px-2 py-1 text-xs rounded bg-green-100 text-green-800">ยืนยันแล้ว</span>' :
+                    '<span class="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">รอยืนยัน</span>';
                 
                 return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${officer.id}</td>
-                        <td class="px-4 py-2">${officer.name}</td>
-                        <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                        <td class="px-4 py-2">${officer.phone}</td>
-                        <td class="px-4 py-2">${officer.email}</td>
-                        <td class="px-4 py-2 text-center">
-                            ${statusDisplay}
-                            ${statusAction}
-                        </td>
-                        <td class="px-4 py-2 text-center">
-                            <button onclick="editOfficer('${officer.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                            <button onclick="deleteOfficer('${officer.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.name}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.phone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${officer.email}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${orgName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${confirmStatus}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editOfficer('${officer.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                            <button onclick="deleteOfficer('${officer.id}')" class="text-red-600 hover:text-red-900 mr-2">ลบ</button>
+                            ${userRole === 'admin' && status && status.teamConfirmed ? 
+                                `<button onclick="resetTeamConfirmation('${officer.orgId}')" class="text-orange-600 hover:text-orange-900 text-xs">รีเซ็ต</button>` : ''}
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Load training data
-        function loadTrainingData() {
-            const tbody = document.getElementById('trainingTableBody');
-            tbody.innerHTML = officers.map(officer => {
-                const org = organizations.find(o => o.id === officer.orgId);
-                const training2023 = trainingData[officer.id]?.['2023']?.length > 0 ? '✓' : '';
-                const training2024 = trainingData[officer.id]?.['2024']?.length > 0 ? '✓' : '';
-                
-                return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${officer.id}</td>
-                        <td class="px-4 py-2">${officer.name}</td>
-                        <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                        <td class="px-4 py-2 text-center cursor-pointer hover:bg-blue-100" onclick="showTrainingModal('${officer.id}', '2023')">${training2023}</td>
-                        <td class="px-4 py-2 text-center cursor-pointer hover:bg-blue-100" onclick="showTrainingModal('${officer.id}', '2024')">${training2024}</td>
-                    </tr>
-                `;
-            }).join('');
-        }
-
-        // Load organizations data
         function loadOrganizationsData() {
             const tbody = document.getElementById('organizationsTableBody');
+            
             tbody.innerHTML = organizations.map(org => {
-                const confirmStatus = confirmationStatus[org.id];
-                let statusDisplay = '';
-                let statusAction = '';
-                
-                if (confirmStatus && confirmStatus.orgConfirmed) {
-                    statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
-                    statusAction = `<button onclick="resetOrgConfirmation('${org.id}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
-                } else {
-                    statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
-                }
+                const status = confirmationStatus[org.id];
+                const confirmStatus = status && status.orgConfirmed ? 
+                    '<span class="inline-block px-2 py-1 text-xs rounded bg-green-100 text-green-800">ยืนยันแล้ว</span>' :
+                    '<span class="inline-block px-2 py-1 text-xs rounded bg-gray-100 text-gray-600">รอยืนยัน</span>';
                 
                 return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${org.id}</td>
-                        <td class="px-4 py-2">${org.name}</td>
-                        <td class="px-4 py-2">${org.phone}</td>
-                        <td class="px-4 py-2">${org.fax}</td>
-                        <td class="px-4 py-2">${org.email}</td>
-                        <td class="px-4 py-2 text-center">
-                            ${statusDisplay}
-                            ${statusAction}
-                        </td>
-                        <td class="px-4 py-2 text-center">
-                            <button onclick="editOrganization('${org.id}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                            <button onclick="deleteOrganization('${org.id}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${org.id}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${org.name}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${org.phone}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${org.fax}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${org.email}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${confirmStatus}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editOrganization('${org.id}')" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                            <button onclick="deleteOrganization('${org.id}')" class="text-red-600 hover:text-red-900 mr-2">ลบ</button>
+                            ${userRole === 'admin' && status && status.orgConfirmed ? 
+                                `<button onclick="resetOrgConfirmation('${org.id}')" class="text-orange-600 hover:text-orange-900 text-xs">รีเซ็ต</button>` : ''}
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Load user accounts data
-        function loadUserAccountsData() {
-            const tbody = document.getElementById('userAccountsTableBody');
+        function loadUsersData() {
+            const tbody = document.getElementById('usersTableBody');
+            
             tbody.innerHTML = users.map(user => {
                 const org = organizations.find(o => o.id === user.orgId);
+                const orgName = org ? org.name : 'ไม่ระบุ';
+                const roleText = user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่';
+                
                 return `
-                    <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${user.name}</td>
-                        <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                        <td class="px-4 py-2">${user.username}</td>
-                        <td class="px-4 py-2">${user.password}</td>
-                        <td class="px-4 py-2">${user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'}</td>
-                        <td class="px-4 py-2 text-center">
-                            <button onclick="editUser('${user.username}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                            <button onclick="deleteUser('${user.username}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${user.username}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${user.name}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${roleText}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${orgName}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm font-medium">
+                            <button onclick="editUser('${user.username}')" class="text-indigo-600 hover:text-indigo-900 mr-2">แก้ไข</button>
+                            <button onclick="deleteUser('${user.username}')" class="text-red-600 hover:text-red-900">ลบ</button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Load activity log data
-        function loadActivityLogData() {
-            const tbody = document.getElementById('activityLogTableBody');
-            // Filter only add, edit, delete, confirm, reset actions
-            const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน' || log.action === 'รีเซ็ต'
-            );
+        function loadActivityData() {
+            const tbody = document.getElementById('activityTableBody');
             
-            tbody.innerHTML = filteredLog.map((log, index) => `
-                <tr class="border-b hover:bg-gray-50">
-                    <td class="px-4 py-2">${log.date}</td>
-                    <td class="px-4 py-2">${log.time}</td>
-                    <td class="px-4 py-2">${log.user}</td>
-                    <td class="px-4 py-2">${log.action}</td>
-                    <td class="px-4 py-2">${log.detail}</td>
-                    <td class="px-4 py-2 text-center">
-                        ${log.status === 'รอยืนยัน' ? 
-                            `<button onclick="acknowledgeActivity(${index})" class="bg-orange-500 text-white px-3 py-1 rounded text-sm hover:bg-orange-600">รอยืนยัน</button>` :
-                            `<span class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm">รับทราบ</span>`
-                        }
-                    </td>
-                </tr>
-            `).join('');
+            tbody.innerHTML = activityLog.map(activity => {
+                const statusClass = activity.status === 'รับทราบ' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800';
+                
+                return `
+                    <tr>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${activity.date}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${activity.time}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${activity.user}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm text-gray-900">${activity.action}</td>
+                        <td class="px-4 py-2 text-sm text-gray-900">${activity.detail}</td>
+                        <td class="px-4 py-2 whitespace-nowrap text-sm">
+                            <span class="inline-block px-2 py-1 text-xs rounded ${statusClass}">${activity.status}</span>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
         }
 
-        // Modal functions
-        function showModal(content) {
-            document.getElementById('modalContent').innerHTML = content;
-            document.getElementById('modalOverlay').classList.remove('hidden');
-        }
-
-        function hideModal() {
-            document.getElementById('modalOverlay').classList.add('hidden');
-        }
-
-        // Click outside modal to close
-        document.getElementById('modalOverlay').addEventListener('click', function(e) {
-            if (e.target === this) {
-                hideModal();
-            }
-        });
-
-        // Officer training history modal
-        function showOfficerTrainingHistory(officerId) {
-            const officer = officers.find(o => o.id === officerId);
-            const training = trainingData[officerId] || {};
+        // Confirmation Functions
+        function updateConfirmationStatusDisplay() {
+            if (!currentUser) return;
             
-            let totalCourses = 0;
-            let trainingHistory = [];
+            const userOrg = currentUser.orgId;
+            const status = confirmationStatus[userOrg];
             
-            Object.keys(training).forEach(year => {
-                const courses = training[year];
-                if (courses && courses.length > 0) {
-                    totalCourses += courses.length;
-                    trainingHistory.push(`ปี ${year} (${courses.join(', ')})`);
+            if (!status) return;
+            
+            // Update team confirmation status
+            const teamStatusEl = document.getElementById('teamConfirmStatus');
+            const orgStatusEl = document.getElementById('orgConfirmStatus');
+            const confirmBtn = document.getElementById('confirmTeamDataBtn');
+            
+            if (teamStatusEl) {
+                if (status.teamConfirmed) {
+                    teamStatusEl.textContent = 'ยืนยันแล้ว';
+                    teamStatusEl.className = 'ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    teamStatusEl.textContent = 'รอยืนยัน';
+                    teamStatusEl.className = 'ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
                 }
+            }
+            
+            if (orgStatusEl) {
+                if (status.orgConfirmed) {
+                    orgStatusEl.textContent = 'ยืนยันแล้ว';
+                    orgStatusEl.className = 'ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
+                } else {
+                    orgStatusEl.textContent = 'รอยืนยัน';
+                    orgStatusEl.className = 'ml-2 inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
+                }
+            }
+            
+            // Update button state
+            if (confirmBtn) {
+                if (status.teamConfirmed && status.orgConfirmed) {
+                    confirmBtn.textContent = 'ยืนยันแล้ว';
+                    confirmBtn.disabled = true;
+                    confirmBtn.className = 'bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed';
+                } else {
+                    confirmBtn.textContent = 'ยืนยันข้อมูล';
+                    confirmBtn.disabled = false;
+                    confirmBtn.className = 'bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700';
+                }
+            }
+        }
+
+        async function confirmTeamData() {
+            const userOrg = currentUser.orgId;
+            
+            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
+                confirmationStatus[userOrg].teamConfirmed = true;
+                confirmationStatus[userOrg].orgConfirmed = true;
+                
+                // Save to Firebase
+                await saveDataToFirebase('confirmationStatus', confirmationStatus);
+                
+                logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
+                updateConfirmationStatusDisplay();
+                
+                alert('ยืนยันข้อมูลเรียบร้อยแล้ว กรุณารอการตรวจสอบจากผู้ดูแลระบบ');
+            }
+        }
+
+        async function resetTeamConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
+                confirmationStatus[orgId].teamConfirmed = false;
+                
+                // Save to Firebase
+                await saveDataToFirebase('confirmationStatus', confirmationStatus);
+                
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
+                loadAllOfficersData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
+        }
+
+        async function resetOrgConfirmation(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
+                confirmationStatus[orgId].orgConfirmed = false;
+                
+                // Save to Firebase
+                await saveDataToFirebase('confirmationStatus', confirmationStatus);
+                
+                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
+                loadOrganizationsData();
+                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+            }
+        }
+
+        // Activity Log Functions
+        async function logActivity(action, detail) {
+            const now = new Date();
+            const newActivity = {
+                date: now.toLocaleDateString('th-TH'),
+                time: now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+                user: currentUser.username,
+                action: action,
+                detail: detail,
+                status: 'รับทราบ'
+            };
+            
+            activityLog.unshift(newActivity);
+            await saveDataToFirebase('activityLog', activityLog);
+        }
+
+        // Search and Filter Functions
+        function filterMembers() {
+            const searchValue = document.getElementById('memberSearch').value.toLowerCase();
+            const filterValue = document.getElementById('memberFilter').value;
+            const rows = document.querySelectorAll('#membersTableBody tr');
+            
+            rows.forEach(row => {
+                const name = row.cells[0].textContent.toLowerCase();
+                const phone = row.cells[1].textContent.toLowerCase();
+                const email = row.cells[2].textContent.toLowerCase();
+                const training = row.cells[3].textContent;
+                
+                const matchesSearch = name.includes(searchValue) || 
+                                    phone.includes(searchValue) || 
+                                    email.includes(searchValue);
+                
+                const matchesFilter = !filterValue || training.includes(filterValue);
+                
+                row.style.display = matchesSearch && matchesFilter ? '' : 'none';
             });
-            
-            const historyText = trainingHistory.length > 0 ? trainingHistory.join(', ') : 'ยังไม่มีประวัติการอบรม';
-            
-            const content = `
-                <h3 class="text-lg font-bold text-dark-green mb-4">ประวัติการอบรม</h3>
-                <p class="mb-4"><strong>เจ้าหน้าที่:</strong> ${officer.name}</p>
-                <div class="mb-4 p-4 bg-gray-50 rounded">
-                    <p class="text-sm text-gray-700 mb-2">ท่านเคยเข้าอบรมทั้งหมด <strong>${totalCourses}</strong> ครั้ง</p>
-                    <p class="text-sm text-gray-700">${historyText}</p>
-                </div>
-                <div class="flex justify-end">
-                    <button onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ปิด</button>
-                </div>
-            `;
-            showModal(content);
         }
 
-        // Training modal
-        function showTrainingModal(officerId, year) {
-            const officer = officers.find(o => o.id === officerId);
-            const courses = trainingData[officerId]?.[year] || [];
-            
-            const content = `
-                <h3 class="text-lg font-bold text-dark-green mb-4">การอบรมปี ${year}</h3>
-                <p class="mb-4"><strong>เจ้าหน้าที่:</strong> ${officer.name}</p>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">หลักสูตรที่เข้าอบรม</label>
-                    <textarea id="trainingCourses" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" rows="4" placeholder="ใส่หลักสูตรที่เข้าอบรม (แยกด้วยการขึ้นบรรทัดใหม่)">${courses.join('\n')}</textarea>
-                </div>
-                <div class="flex justify-end space-x-2">
-                    <button onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
-                    <button onclick="saveTraining('${officerId}', '${year}')" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">บันทึก</button>
-                </div>
-            `;
-            showModal(content);
-        }
-
-        function saveTraining(officerId, year) {
-            const courses = document.getElementById('trainingCourses').value.split('\n').filter(course => course.trim() !== '');
-            
-            // Get old value for logging
-            const oldCourses = trainingData[officerId]?.[year] || [];
-            const oldValue = oldCourses.length > 0 ? oldCourses.join(', ') : 'ไม่มีข้อมูล';
-            const newValue = courses.length > 0 ? courses.join(', ') : 'ไม่มีข้อมูล';
-            
-            if (!trainingData[officerId]) {
-                trainingData[officerId] = {};
-            }
-            trainingData[officerId][year] = courses;
-            
-            logActivity('แก้ไข', `แก้ไขข้อมูลการอบรม ${officerId} ปี ${year}`, oldValue, newValue);
-            hideModal();
-            loadTrainingData();
-        }
-
-        // Save functions
-        function saveOrgInfo() {
-            const phone = document.getElementById('editPhone').value;
-            const fax = document.getElementById('editFax').value;
-            const email = document.getElementById('editEmail').value;
-            
-            // Find current organization
-            const userOrg = organizations.find(org => org.id === currentUser.orgId);
-            
-            // Log changes for each field that was modified
-            if (userOrg) {
-                if (phone !== userOrg.phone) {
-                    logActivity('แก้ไข', `แก้ไขโทรศัพท์หน่วยงาน ${userOrg.id}`, userOrg.phone, phone);
-                    userOrg.phone = phone;
-                }
-                if (fax !== userOrg.fax) {
-                    logActivity('แก้ไข', `แก้ไขโทรสารหน่วยงาน ${userOrg.id}`, userOrg.fax, fax);
-                    userOrg.fax = fax;
-                }
-                if (email !== userOrg.email) {
-                    logActivity('แก้ไข', `แก้ไขอีเมลหน่วยงาน ${userOrg.id}`, userOrg.email, email);
-                    userOrg.email = email;
-                }
-            }
-            
-            alert('บันทึกข้อมูลหน่วยงานเรียบร้อยแล้ว');
-        }
-
-        // Log activity
-        function logActivity(action, detail, oldValue = null, newValue = null) {
-            // Only log add, edit, delete, confirm, reset actions
-            if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ' || action === 'ยืนยัน' || action === 'รีเซ็ต') {
-                const now = new Date();
-                const date = now.toISOString().split('T')[0];
-                const time = now.toTimeString().split(' ')[0].substring(0, 5);
-                
-                let formattedDetail = detail;
-                
-                // For edit actions, format with old and new values
-                if (action === 'แก้ไข' && oldValue !== null && newValue !== null) {
-                    formattedDetail = `${detail} | เดิม: ${oldValue} | เปลี่ยนเป็น: ${newValue}`;
-                }
-                
-                activityLog.unshift({
-                    date: date,
-                    time: time,
-                    user: currentUser ? currentUser.username : 'system',
-                    action: action,
-                    detail: formattedDetail,
-                    status: 'รอยืนยัน'
-                });
-            }
-        }
-
-        // Acknowledge activity function
-        function acknowledgeActivity(index) {
-            const filteredLog = activityLog.filter(log => 
-                log.action === 'เพิ่ม' || log.action === 'แก้ไข' || log.action === 'ลบ' || log.action === 'ยืนยัน' || log.action === 'รีเซ็ต'
-            );
-            
-            if (filteredLog[index] && filteredLog[index].status === 'รอยืนยัน') {
-                // Find the original log entry and update it
-                const originalIndex = activityLog.findIndex(log => 
-                    log.date === filteredLog[index].date && 
-                    log.time === filteredLog[index].time && 
-                    log.detail === filteredLog[index].detail
-                );
-                
-                if (originalIndex !== -1) {
-                    activityLog[originalIndex].status = 'รับทราบ';
-                    loadActivityLogData(); // Refresh the table
-                }
-            }
-        }
-
-        // Search and filter functions
-        function searchOfficers() {
-            filterOfficers();
-        }
-        
         function filterOfficers() {
-            const searchTerm = document.getElementById('officerSearch')?.value.toLowerCase() || '';
-            const orgFilter = document.getElementById('orgFilter')?.value || '';
-            const trainingFilter = document.getElementById('trainingFilter')?.value || '';
+            const searchValue = document.getElementById('officerSearch').value.toLowerCase();
+            const orgValue = document.getElementById('officerOrgFilter').value;
+            const rows = document.querySelectorAll('#officersTableBody tr');
             
-            const orgBlocks = document.querySelectorAll('#officerDashboard .mb-8');
-            
-            orgBlocks.forEach(block => {
-                const rows = block.querySelectorAll('tbody tr');
-                let hasVisibleRows = false;
+            rows.forEach(row => {
+                const name = row.cells[1].textContent.toLowerCase();
+                const phone = row.cells[2].textContent.toLowerCase();
+                const email = row.cells[3].textContent.toLowerCase();
+                const orgName = row.cells[4].textContent;
                 
-                rows.forEach(row => {
-                    const officerId = row.cells[0]?.textContent || '';
-                    const officerName = row.cells[1]?.textContent || '';
-                    const orgName = row.cells[2]?.textContent || '';
-                    
-                    // Get officer data for training filter
-                    const officer = officers.find(o => o.id === officerId);
-                    let hasTraining = false;
-                    if (officer && trainingData[officer.id]) {
-                        hasTraining = Object.values(trainingData[officer.id]).some(courses => courses && courses.length > 0);
-                    }
-                    
-                    // Apply filters
-                    let showRow = true;
-                    
-                    // Search filter
-                    if (searchTerm) {
-                        const searchText = `${officerId} ${officerName} ${orgName}`.toLowerCase();
-                        if (!searchText.includes(searchTerm)) {
-                            showRow = false;
-                        }
-                    }
-                    
-                    // Organization filter
-                    if (orgFilter && officer && officer.orgId !== orgFilter) {
-                        showRow = false;
-                    }
-                    
-                    // Training status filter
-                    if (trainingFilter) {
-                        if (trainingFilter === 'trained' && !hasTraining) {
-                            showRow = false;
-                        } else if (trainingFilter === 'not-trained' && hasTraining) {
-                            showRow = false;
-                        }
-                    }
-                    
-                    row.style.display = showRow ? '' : 'none';
-                    if (showRow) hasVisibleRows = true;
-                });
+                const matchesSearch = name.includes(searchValue) || 
+                                    phone.includes(searchValue) || 
+                                    email.includes(searchValue);
                 
-                // Hide/show entire organization block if no visible rows
-                block.style.display = hasVisibleRows ? '' : 'none';
+                const matchesOrg = !orgValue || orgName.includes(organizations.find(o => o.id === orgValue)?.name || '');
+                
+                row.style.display = matchesSearch && matchesOrg ? '' : 'none';
             });
         }
-        
-        // Confirmation functions
-        function updateConfirmationStatusDisplay() {
-            const userOrg = currentUser.orgId;
-            const status = confirmationStatus[userOrg];
-            
-            // Update team confirmation status
-            const teamStatusEl = document.getElementById('teamConfirmStatus');
-            const orgStatusEl = document.getElementById('orgConfirmStatus');
-            const confirmBtn = document.getElementById('confirmTeamDataBtn');
-            
-            if (teamStatusEl) {
-                if (status.teamConfirmed) {
-                    teamStatusEl.textContent = 'ยืนยันแล้ว';
-                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
-                } else {
-                    teamStatusEl.textContent = 'รอยืนยัน';
-                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
-                }
-            }
-            
-            if (orgStatusEl) {
-                if (status.orgConfirmed) {
-                    orgStatusEl.textContent = 'ยืนยันแล้ว';
-                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
-                } else {
-                    orgStatusEl.textContent = 'รอยืนยัน';
-                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
-                }
-            }
-            
-            // Update button state
-            if (confirmBtn) {
-                if (status.teamConfirmed && status.orgConfirmed) {
-                    confirmBtn.textContent = 'ยืนยันแล้ว';
-                    confirmBtn.disabled = true;
-                    confirmBtn.className = 'bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed';
-                } else {
-                    confirmBtn.textContent = 'ยืนยันข้อมูล';
-                    confirmBtn.disabled = false;
-                    confirmBtn.className = 'bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700';
-                }
-            }
-        }
-        
-        function confirmTeamData() {
-            const userOrg = currentUser.orgId;
-            
-            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
-                confirmationStatus[userOrg].teamConfirmed = true;
-                confirmationStatus[userOrg].orgConfirmed = true;
-                
-                logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
-                updateConfirmationStatusDisplay();
-                
-                alert('ยืนยันข้อมูลเรียบร้อยแล้ว กรุณารอการตรวจสอบจากผู้ดูแลระบบ');
-            }
-        }
-        
-        function resetTeamConfirmation(orgId) {
-            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
-                confirmationStatus[orgId].teamConfirmed = false;
-                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
-                loadAllOfficersData();
-                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
-            }
-        }
-        
-        function resetOrgConfirmation(orgId) {
-            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
-                confirmationStatus[orgId].orgConfirmed = false;
-                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
-                loadOrganizationsData();
-                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
-            }
-        }
-        
-        // Confirmation functions
-        function updateConfirmationStatusDisplay() {
-            const userOrg = currentUser.orgId;
-            const status = confirmationStatus[userOrg];
-            
-            // Update team confirmation status
-            const teamStatusEl = document.getElementById('teamConfirmStatus');
-            const orgStatusEl = document.getElementById('orgConfirmStatus');
-            const confirmBtn = document.getElementById('confirmTeamDataBtn');
-            
-            if (teamStatusEl) {
-                if (status.teamConfirmed) {
-                    teamStatusEl.textContent = 'ยืนยันแล้ว';
-                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
-                } else {
-                    teamStatusEl.textContent = 'รอยืนยัน';
-                    teamStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
-                }
-            }
-            
-            if (orgStatusEl) {
-                if (status.orgConfirmed) {
-                    orgStatusEl.textContent = 'ยืนยันแล้ว';
-                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-green-100 text-green-800';
-                } else {
-                    orgStatusEl.textContent = 'รอยืนยัน';
-                    orgStatusEl.className = 'inline-block px-3 py-1 rounded text-sm font-medium bg-gray-100 text-gray-600';
-                }
-            }
-            
-            // Update button state
-            if (confirmBtn) {
-                if (status.teamConfirmed && status.orgConfirmed) {
-                    confirmBtn.textContent = 'ยืนยันแล้ว';
-                    confirmBtn.disabled = true;
-                    confirmBtn.className = 'bg-gray-400 text-white px-6 py-2 rounded cursor-not-allowed';
-                } else {
-                    confirmBtn.textContent = 'ยืนยันข้อมูล';
-                    confirmBtn.disabled = false;
-                    confirmBtn.className = 'bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700';
-                }
-            }
-        }
-        
-        function confirmTeamData() {
-            const userOrg = currentUser.orgId;
-            
-            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
-                confirmationStatus[userOrg].teamConfirmed = true;
-                confirmationStatus[userOrg].orgConfirmed = true;
-                
-                logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
-                updateConfirmationStatusDisplay();
-                
-                alert('ยืนยันข้อมูลเรียบร้อยแล้ว กรุณารอการตรวจสอบจากผู้ดูแลระบบ');
-            }
-        }
-        
-        function resetTeamConfirmation(orgId) {
-            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
-                confirmationStatus[orgId].teamConfirmed = false;
-                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
-                loadAllOfficersData();
-                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
-            }
-        }
-        
-        function resetOrgConfirmation(orgId) {
-            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
-                confirmationStatus[orgId].orgConfirmed = false;
-                logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
-                loadOrganizationsData();
-                alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
-            }
-        }
-        
-        // Placeholder functions for other modals and operations
+
+        // Placeholder Modal Functions
         function showAddMemberModal() { alert('ฟีเจอร์เพิ่มสมาชิกใหม่'); }
         function showAddOfficerModal() { alert('ฟีเจอร์เพิ่มเจ้าหน้าที่ใหม่'); }
         function showAddYearModal() { alert('ฟีเจอร์เพิ่มปีใหม่'); }
         function showAddOrgModal() { alert('ฟีเจอร์เพิ่มหน่วยงานใหม่'); }
         function showAddUserModal() { alert('ฟีเจอร์เพิ่มบัญชีใหม่'); }
+        
         function editMember(id) { alert('ฟีเจอร์แก้ไขสมาชิก: ' + id); }
         function deleteMember(id) { alert('ฟีเจอร์ลบสมาชิก: ' + id); }
         function editOfficer(id) { alert('ฟีเจอร์แก้ไขเจ้าหน้าที่: ' + id); }
@@ -1342,6 +841,16 @@
         function deleteOrganization(id) { alert('ฟีเจอร์ลบหน่วยงาน: ' + id); }
         function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username); }
         function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username); }
+
+        // Initialize Firebase when page loads
+        window.addEventListener('load', async function() {
+            try {
+                await initializeFirebaseData();
+                console.log('Firebase initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize Firebase:', error);
+            }
+        });
     </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9840a241618b45b3',t:'MTc1ODY5OTYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>
