@@ -88,6 +88,12 @@
                 <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
             </form>
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
+            <div class="mt-6 text-xs text-gray-500 text-center">
+                <p>บัญชีทดสอบ:</p>
+                <p>เจ้าหน้าที่ (เขตบางรัก): officer1 / pass123</p>
+                <p>เจ้าหน้าที่ (เขตสาทร): officer2 / pass123</p>
+                <p>ผู้ดูแลระบบ: admin1 / admin123</p>
+            </div>
         </div>
     </div>
 
@@ -471,38 +477,150 @@
         let currentUser = null;
         let userRole = null;
         
-        const users = [];
+        const users = [
+            { username: 'officer1', password: 'pass123', name: 'นายสมชาย ใจดี', role: 'officer', orgId: 'BMA001' },
+            { username: 'officer2', password: 'pass123', name: 'นางสาวมาลี สวยงาม', role: 'officer', orgId: 'BMA002' },
+            { username: 'admin1', password: 'admin123', name: 'นายผู้ดูแล ระบบ', role: 'admin', orgId: 'BMA000' }
+        ];
 
-        const organizations = [];
+        const organizations = [
+            { id: 'BMA001', name: 'สำนักงานเขตบางรัก', phone: '02-234-5678', fax: '02-234-5679', email: 'bangrak@bma.go.th' },
+            { id: 'BMA002', name: 'สำนักงานเขตสาทร', phone: '02-234-5680', fax: '02-234-5681', email: 'sathorn@bma.go.th' },
+            { id: 'BMA003', name: 'สำนักงานเขตวัฒนา', phone: '02-234-5682', fax: '02-234-5683', email: 'watthana@bma.go.th' },
+            { id: 'BMA000', name: 'สำนักงานส่วนกลาง', phone: '02-123-4567', fax: '02-123-4568', email: 'admin@bma.go.th' }
+        ];
 
-        const officers = [];
+        const officers = [
+            { id: 'OFF001', name: 'นายสมชาย ใจดี', phone: '081-234-5678', email: 'somchai@bma.go.th', orgId: 'BMA001' },
+            { id: 'OFF002', name: 'นางสุดา เก่งกาจ', phone: '081-234-5679', email: 'suda@bma.go.th', orgId: 'BMA001' },
+            { id: 'OFF003', name: 'นางสาวมาลี สวยงาม', phone: '081-234-5680', email: 'malee@bma.go.th', orgId: 'BMA002' },
+            { id: 'OFF004', name: 'นายวิชัย มั่นคง', phone: '081-234-5681', email: 'wichai@bma.go.th', orgId: 'BMA002' },
+            { id: 'OFF005', name: 'นางสาวนิตยา ฉลาด', phone: '081-234-5682', email: 'nitaya@bma.go.th', orgId: 'BMA003' },
+            { id: 'OFF006', name: 'นายประยุทธ์ รอบรู้', phone: '081-234-5683', email: 'prayuth@bma.go.th', orgId: 'BMA003' }
+        ];
 
         const trainingData = {};
 
         const activityLog = [];
 
         // Confirmation status for each organization
-        const confirmationStatus = {};
+        const confirmationStatus = {
+            'BMA001': { teamConfirmed: false, orgConfirmed: false },
+            'BMA002': { teamConfirmed: false, orgConfirmed: false },
+            'BMA003': { teamConfirmed: false, orgConfirmed: false }
+        };
+
+        // Firebase functions
+        async function initializeFirebaseData() {
+            try {
+                console.log('Initializing Firebase data...');
+                
+                // ตรวจสอบว่ามีข้อมูลใน Firebase หรือไม่
+                const usersSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users'));
+                const existingUsers = usersSnapshot.val();
+                
+                if (!existingUsers || Object.keys(existingUsers).length === 0) {
+                    // บันทึกข้อมูลเริ่มต้น
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), users);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), organizations);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'officers'), officers);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'trainingData'), trainingData);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'activityLog'), activityLog);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'confirmationStatus'), confirmationStatus);
+                    
+                    console.log('Initial data saved to Firebase');
+                } else {
+                    console.log('Data already exists in Firebase');
+                }
+                
+                // โหลดข้อมูลจาก Firebase
+                await loadDataFromFirebase();
+                
+            } catch (error) {
+                console.error('Error initializing Firebase data:', error);
+            }
+        }
+        
+        async function loadDataFromFirebase() {
+            try {
+                // โหลดข้อมูลทั้งหมดจาก Firebase
+                const [usersSnap, orgsSnap, officersSnap, trainingSnap, activitySnap, confirmSnap] = await Promise.all([
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users')),
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'organizations')),
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'officers')),
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'trainingData')),
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'activityLog')),
+                    window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'confirmationStatus'))
+                ]);
+                
+                // อัพเดต local arrays ด้วยข้อมูลจาก Firebase
+                if (usersSnap.val()) {
+                    users.length = 0;
+                    users.push(...usersSnap.val());
+                }
+                if (orgsSnap.val()) {
+                    organizations.length = 0;
+                    organizations.push(...orgsSnap.val());
+                }
+                if (officersSnap.val()) {
+                    officers.length = 0;
+                    officers.push(...officersSnap.val());
+                }
+                if (trainingSnap.val()) {
+                    Object.assign(trainingData, trainingSnap.val());
+                }
+                if (activitySnap.val()) {
+                    activityLog.length = 0;
+                    activityLog.push(...activitySnap.val());
+                }
+                if (confirmSnap.val()) {
+                    Object.assign(confirmationStatus, confirmSnap.val());
+                }
+                
+                console.log('Data loaded from Firebase successfully');
+                
+            } catch (error) {
+                console.error('Error loading data from Firebase:', error);
+            }
+        }
+        
+        async function saveToFirebase(path, data) {
+            try {
+                await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, path), data);
+                console.log(`Data saved to Firebase: ${path}`);
+            } catch (error) {
+                console.error(`Error saving to Firebase (${path}):`, error);
+            }
+        }
 
         // Login functionality
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
             
-            const user = users.find(u => u.username === username && u.password === password);
-            
-            if (user) {
-                currentUser = user;
-                userRole = user.role;
-                document.getElementById('loginPage').classList.add('hidden');
-                document.getElementById('mainApp').classList.remove('hidden');
-                document.getElementById('currentUser').textContent = user.name;
-                setupNavigation();
-                showDefaultTab();
-                logActivity('เข้าสู่ระบบ', 'เข้าสู่ระบบสำเร็จ');
-            } else {
-                document.getElementById('loginError').textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+            try {
+                // โหลดข้อมูลผู้ใช้ล่าสุดจาก Firebase
+                await loadDataFromFirebase();
+                
+                const user = users.find(u => u.username === username && u.password === password);
+                
+                if (user) {
+                    currentUser = user;
+                    userRole = user.role;
+                    document.getElementById('loginPage').classList.add('hidden');
+                    document.getElementById('mainApp').classList.remove('hidden');
+                    document.getElementById('currentUser').textContent = user.name;
+                    setupNavigation();
+                    showDefaultTab();
+                    await logActivity('เข้าสู่ระบบ', 'เข้าสู่ระบบสำเร็จ');
+                } else {
+                    document.getElementById('loginError').textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
+                    document.getElementById('loginError').classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                document.getElementById('loginError').textContent = 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
                 document.getElementById('loginError').classList.remove('hidden');
             }
         });
@@ -1016,54 +1134,72 @@
             showModal(content);
         }
 
-        function saveTraining(officerId, year) {
+        async function saveTraining(officerId, year) {
             const courses = document.getElementById('trainingCourses').value.split('\n').filter(course => course.trim() !== '');
             
-            // Get old value for logging
-            const oldCourses = trainingData[officerId]?.[year] || [];
-            const oldValue = oldCourses.length > 0 ? oldCourses.join(', ') : 'ไม่มีข้อมูล';
-            const newValue = courses.length > 0 ? courses.join(', ') : 'ไม่มีข้อมูล';
-            
-            if (!trainingData[officerId]) {
-                trainingData[officerId] = {};
+            try {
+                // Get old value for logging
+                const oldCourses = trainingData[officerId]?.[year] || [];
+                const oldValue = oldCourses.length > 0 ? oldCourses.join(', ') : 'ไม่มีข้อมูล';
+                const newValue = courses.length > 0 ? courses.join(', ') : 'ไม่มีข้อมูล';
+                
+                if (!trainingData[officerId]) {
+                    trainingData[officerId] = {};
+                }
+                trainingData[officerId][year] = courses;
+                
+                // บันทึกลง Firebase
+                await saveToFirebase('trainingData', trainingData);
+                
+                await logActivity('แก้ไข', `แก้ไขข้อมูลการอบรม ${officerId} ปี ${year}`, oldValue, newValue);
+                hideModal();
+                loadTrainingData();
+                
+            } catch (error) {
+                console.error('Error saving training data:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
             }
-            trainingData[officerId][year] = courses;
-            
-            logActivity('แก้ไข', `แก้ไขข้อมูลการอบรม ${officerId} ปี ${year}`, oldValue, newValue);
-            hideModal();
-            loadTrainingData();
         }
 
         // Save functions
-        function saveOrgInfo() {
+        async function saveOrgInfo() {
             const phone = document.getElementById('editPhone').value;
             const fax = document.getElementById('editFax').value;
             const email = document.getElementById('editEmail').value;
             
-            // Find current organization
-            const userOrg = organizations.find(org => org.id === currentUser.orgId);
-            
-            // Log changes for each field that was modified
-            if (userOrg) {
-                if (phone !== userOrg.phone) {
-                    logActivity('แก้ไข', `แก้ไขโทรศัพท์หน่วยงาน ${userOrg.id}`, userOrg.phone, phone);
-                    userOrg.phone = phone;
+            try {
+                // Find current organization
+                const userOrg = organizations.find(org => org.id === currentUser.orgId);
+                
+                // Log changes for each field that was modified
+                if (userOrg) {
+                    if (phone !== userOrg.phone) {
+                        await logActivity('แก้ไข', `แก้ไขโทรศัพท์หน่วยงาน ${userOrg.id}`, userOrg.phone, phone);
+                        userOrg.phone = phone;
+                    }
+                    if (fax !== userOrg.fax) {
+                        await logActivity('แก้ไข', `แก้ไขโทรสารหน่วยงาน ${userOrg.id}`, userOrg.fax, fax);
+                        userOrg.fax = fax;
+                    }
+                    if (email !== userOrg.email) {
+                        await logActivity('แก้ไข', `แก้ไขอีเมลหน่วยงาน ${userOrg.id}`, userOrg.email, email);
+                        userOrg.email = email;
+                    }
+                    
+                    // บันทึกลง Firebase
+                    await saveToFirebase('organizations', organizations);
                 }
-                if (fax !== userOrg.fax) {
-                    logActivity('แก้ไข', `แก้ไขโทรสารหน่วยงาน ${userOrg.id}`, userOrg.fax, fax);
-                    userOrg.fax = fax;
-                }
-                if (email !== userOrg.email) {
-                    logActivity('แก้ไข', `แก้ไขอีเมลหน่วยงาน ${userOrg.id}`, userOrg.email, email);
-                    userOrg.email = email;
-                }
+                
+                alert('บันทึกข้อมูลหน่วยงานเรียบร้อยแล้ว');
+                
+            } catch (error) {
+                console.error('Error saving organization info:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
             }
-            
-            alert('บันทึกข้อมูลหน่วยงานเรียบร้อยแล้ว');
         }
 
         // Log activity
-        function logActivity(action, detail, oldValue = null, newValue = null) {
+        async function logActivity(action, detail, oldValue = null, newValue = null) {
             // Only log add, edit, delete, confirm, reset actions
             if (action === 'เพิ่ม' || action === 'แก้ไข' || action === 'ลบ' || action === 'ยืนยัน' || action === 'รีเซ็ต') {
                 const now = new Date();
@@ -1077,14 +1213,23 @@
                     formattedDetail = `${detail} | เดิม: ${oldValue} | เปลี่ยนเป็น: ${newValue}`;
                 }
                 
-                activityLog.unshift({
+                const logEntry = {
                     date: date,
                     time: time,
                     user: currentUser ? currentUser.username : 'system',
                     action: action,
                     detail: formattedDetail,
                     status: 'รอยืนยัน'
-                });
+                };
+                
+                activityLog.unshift(logEntry);
+                
+                // บันทึกลง Firebase
+                try {
+                    await saveToFirebase('activityLog', activityLog);
+                } catch (error) {
+                    console.error('Error saving activity log:', error);
+                }
             }
         }
 
@@ -1337,6 +1482,11 @@
         function deleteOrganization(id) { alert('ฟีเจอร์ลบหน่วยงาน: ' + id); }
         function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username); }
         function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username); }
+        
+        // Initialize Firebase data when page loads
+        window.addEventListener('load', function() {
+            initializeFirebaseData();
+        });
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9840a241618b45b3',t:'MTc1ODY5OTYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>
