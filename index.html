@@ -88,6 +88,10 @@
                 <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
             </form>
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
+            <div class="mt-6 text-xs text-gray-500 text-center">
+                <p>บัญชีผู้ดูแลระบบ:</p>
+                <p>Username: 0000 / Password: 0000</p>
+            </div>
         </div>
     </div>
 
@@ -494,15 +498,24 @@
                 const existingUsers = usersSnapshot.val();
                 
                 if (!existingUsers || Object.keys(existingUsers).length === 0) {
+                    // สร้างบัญชี admin เริ่มต้น
+                    const initialUsers = [
+                        { username: '0000', password: '0000', name: 'ผู้ดูแลระบบ', role: 'admin', orgId: 'ADMIN001' }
+                    ];
+                    
+                    const initialOrganizations = [
+                        { id: 'ADMIN001', name: 'ส่วนจัดการระบบ', phone: '02-000-0000', fax: '02-000-0001', email: 'admin@srrt.go.th' }
+                    ];
+                    
                     // บันทึกข้อมูลเริ่มต้น
-                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), users);
-                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), organizations);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), initialUsers);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), initialOrganizations);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'officers'), officers);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'trainingData'), trainingData);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'activityLog'), activityLog);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'confirmationStatus'), confirmationStatus);
                     
-                    console.log('Initial data saved to Firebase');
+                    console.log('Initial admin account created in Firebase');
                 } else {
                     console.log('Data already exists in Firebase');
                 }
