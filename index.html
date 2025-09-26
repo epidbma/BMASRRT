@@ -87,10 +87,46 @@
                 </div>
                 <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
             </form>
+            
+            <!-- Register Form -->
+            <form id="registerForm" class="space-y-6 hidden">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้งาน</label>
+                    <input type="text" id="regUsername" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
+                    <input type="password" id="regPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ยืนยันรหัสผ่าน</label>
+                    <input type="password" id="regConfirmPassword" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                    <input type="text" id="regFullName" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">บทบาท</label>
+                    <select id="regRole" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        <option value="">เลือกบทบาท</option>
+                        <option value="officer">เจ้าหน้าที่</option>
+                        <option value="admin">ผู้ดูแลระบบ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">รหัสหน่วยงาน</label>
+                    <input type="text" id="regOrgId" placeholder="เช่น BMA001, BMA002" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                </div>
+                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">ลงทะเบียน</button>
+            </form>
+            
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
-            <div class="mt-6 text-xs text-gray-500 text-center">
-                <p>บัญชีผู้ดูแลระบบ:</p>
-                <p>Username: 0000 / Password: 0000</p>
+            
+            <!-- Toggle between Login and Register -->
+            <div class="mt-6 text-center">
+                <button id="toggleToRegister" class="text-medium-green hover:text-dark-green text-sm">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</button>
+                <button id="toggleToLogin" class="text-medium-green hover:text-dark-green text-sm hidden">มีบัญชีแล้ว? เข้าสู่ระบบ</button>
             </div>
         </div>
     </div>
@@ -497,25 +533,20 @@
                 const usersSnapshot = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users'));
                 const existingUsers = usersSnapshot.val();
                 
-                if (!existingUsers || Object.keys(existingUsers).length === 0) {
-                    // สร้างบัญชี admin เริ่มต้น
-                    const initialUsers = [
-                        { username: '0000', password: '0000', name: 'ผู้ดูแลระบบ', role: 'admin', orgId: 'ADMIN001' }
+                if (!existingUsers || (Array.isArray(existingUsers) && existingUsers.length === 0) || Object.keys(existingUsers).length === 0) {
+                    // สร้างผู้ใช้แรกเพื่อการทดสอบ
+                    const defaultUsers = [
+                        { username: 'admin', password: 'admin123', name: 'ผู้ดูแลระบบ', role: 'admin', orgId: 'ADMIN' }
                     ];
                     
-                    const initialOrganizations = [
-                        { id: 'ADMIN001', name: 'ส่วนจัดการระบบ', phone: '02-000-0000', fax: '02-000-0001', email: 'admin@srrt.go.th' }
-                    ];
-                    
-                    // บันทึกข้อมูลเริ่มต้น
-                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), initialUsers);
-                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), initialOrganizations);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), defaultUsers);
+                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), organizations);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'officers'), officers);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'trainingData'), trainingData);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'activityLog'), activityLog);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'confirmationStatus'), confirmationStatus);
                     
-                    console.log('Initial admin account created in Firebase');
+                    console.log('Default admin user created in Firebase');
                 } else {
                     console.log('Data already exists in Firebase');
                 }
@@ -579,6 +610,98 @@
                 console.error(`Error saving to Firebase (${path}):`, error);
             }
         }
+
+        // Toggle between login and register forms
+        document.getElementById('toggleToRegister').addEventListener('click', function() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            document.getElementById('toggleToRegister').classList.add('hidden');
+            document.getElementById('toggleToLogin').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        });
+        
+        document.getElementById('toggleToLogin').addEventListener('click', function() {
+            document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('toggleToLogin').classList.add('hidden');
+            document.getElementById('toggleToRegister').classList.remove('hidden');
+            document.getElementById('loginError').classList.add('hidden');
+        });
+
+        // Register functionality
+        document.getElementById('registerForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const username = document.getElementById('regUsername').value;
+            const password = document.getElementById('regPassword').value;
+            const confirmPassword = document.getElementById('regConfirmPassword').value;
+            const fullName = document.getElementById('regFullName').value;
+            const role = document.getElementById('regRole').value;
+            const orgId = document.getElementById('regOrgId').value;
+            
+            // Validation
+            if (password !== confirmPassword) {
+                document.getElementById('loginError').textContent = 'รหัสผ่านไม่ตรงกัน';
+                document.getElementById('loginError').classList.remove('hidden');
+                return;
+            }
+            
+            if (password.length < 6) {
+                document.getElementById('loginError').textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                document.getElementById('loginError').classList.remove('hidden');
+                return;
+            }
+            
+            try {
+                // โหลดข้อมูลผู้ใช้ล่าสุดจาก Firebase
+                await loadDataFromFirebase();
+                
+                // ตรวจสอบว่า username ซ้ำหรือไม่
+                const existingUser = users.find(u => u.username === username);
+                if (existingUser) {
+                    document.getElementById('loginError').textContent = 'ชื่อผู้ใช้นี้มีคนใช้แล้ว';
+                    document.getElementById('loginError').classList.remove('hidden');
+                    return;
+                }
+                
+                // สร้างผู้ใช้ใหม่
+                const newUser = {
+                    username: username,
+                    password: password,
+                    name: fullName,
+                    role: role,
+                    orgId: orgId
+                };
+                
+                users.push(newUser);
+                
+                // บันทึกลง Firebase
+                await saveToFirebase('users', users);
+                
+                // สร้าง confirmation status สำหรับหน่วยงานใหม่
+                if (role === 'officer' && !confirmationStatus[orgId]) {
+                    confirmationStatus[orgId] = { teamConfirmed: false, orgConfirmed: false };
+                    await saveToFirebase('confirmationStatus', confirmationStatus);
+                }
+                
+                await logActivity('ลงทะเบียน', `มีผู้ใช้ใหม่ลงทะเบียน: ${fullName} (${username})`);
+                
+                alert('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบได้แล้ว');
+                
+                // กลับไปหน้า login
+                document.getElementById('registerForm').classList.add('hidden');
+                document.getElementById('loginForm').classList.remove('hidden');
+                document.getElementById('toggleToLogin').classList.add('hidden');
+                document.getElementById('toggleToRegister').classList.remove('hidden');
+                
+                // ล้างฟอร์ม
+                document.getElementById('registerForm').reset();
+                
+            } catch (error) {
+                console.error('Registration error:', error);
+                document.getElementById('loginError').textContent = 'เกิดข้อผิดพลาดในการลงทะเบียน';
+                document.getElementById('loginError').classList.remove('hidden');
+            }
+        });
 
         // Login functionality
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
