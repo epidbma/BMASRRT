@@ -1780,7 +1780,10 @@
                 <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าข้อมูลเจ้าหน้าที่จากไฟล์ Excel</h3>
                 <div class="space-y-4">
                     <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                        <h4 class="font-medium text-yellow-800 mb-2">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-medium text-yellow-800">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
+                            <button onclick="downloadExcelTemplate()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">ดาวน์โหลด Template</button>
+                        </div>
                         <ul class="text-sm text-yellow-700 space-y-1">
                             <li>• คอลัมน์ A: รหัสเจ้าหน้าที่ (เช่น OFF001)</li>
                             <li>• คอลัมน์ B: ชื่อ-นามสกุล</li>
@@ -1847,6 +1850,7 @@
         let importData = [];
         
         function previewImport() {
+            console.log('Starting previewImport function');
             const fileInput = document.getElementById('excelFile');
             const file = fileInput.files[0];
             
@@ -1855,59 +1859,98 @@
                 return;
             }
             
+            console.log('File selected:', file.name, file.type, file.size);
+            
+            // Check if XLSX library is loaded
+            if (typeof XLSX === 'undefined') {
+                alert('ไม่สามารถโหลดไลบรารีสำหรับอ่าน Excel กรุณารีเฟรชหน้า');
+                console.error('XLSX library not loaded');
+                return;
+            }
+            
             const reader = new FileReader();
             reader.onload = function(e) {
+                console.log('File read successfully');
                 try {
                     const data = new Uint8Array(e.target.result);
+                    console.log('Data length:', data.length);
+                    
                     const workbook = XLSX.read(data, { type: 'array' });
+                    console.log('Workbook sheets:', workbook.SheetNames);
+                    
+                    if (workbook.SheetNames.length === 0) {
+                        alert('ไม่พบ sheet ในไฟล์ Excel');
+                        return;
+                    }
+                    
                     const firstSheetName = workbook.SheetNames[0];
                     const worksheet = workbook.Sheets[firstSheetName];
                     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('Raw JSON data:', jsonData);
                     
                     // Skip header row and process data
                     const dataRows = jsonData.slice(1).filter(row => {
-                        return row.length > 0 && row[0]; // At least officer ID must exist
+                        return row && row.length > 0 && row[0] != null && row[0] !== ''; // At least officer ID must exist
                     });
+                    
+                    console.log('Filtered data rows:', dataRows.length);
+                    
+                    if (dataRows.length === 0) {
+                        alert('ไม่พบข้อมูลในไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+                        return;
+                    }
                     
                     importData = [];
                     const errors = [];
                     const existingIds = new Set(officers.map(o => o.id));
                     const orgIds = new Set(organizations.map(org => org.id));
                     
+                    console.log('Existing officer IDs:', Array.from(existingIds));
+                    console.log('Existing org IDs:', Array.from(orgIds));
+                    
                     dataRows.forEach((row, index) => {
                         const rowNum = index + 2; // +2 because we skipped header and arrays are 0-indexed
+                        console.log(`Processing row ${rowNum}:`, row);
+                        
                         const [officerId, name, phone, email, orgId] = row;
                         
                         // Validation
                         const rowErrors = [];
                         
-                        if (!officerId || typeof officerId !== 'string') {
+                        // Convert values to strings and handle empty cells
+                        const cleanOfficerId = officerId ? String(officerId).trim() : '';
+                        const cleanName = name ? String(name).trim() : '';
+                        const cleanPhone = phone ? String(phone).trim() : '';
+                        const cleanEmail = email ? String(email).trim() : '';
+                        const cleanOrgId = orgId ? String(orgId).trim() : '';
+                        
+                        if (!cleanOfficerId) {
                             rowErrors.push(`แถว ${rowNum}: รหัสเจ้าหน้าที่ไม่ถูกต้อง`);
                         } else {
-                            const cleanId = String(officerId).trim().toUpperCase();
-                            if (existingIds.has(cleanId)) {
-                                rowErrors.push(`แถว ${rowNum}: รหัสเจ้าหน้าที่ ${cleanId} มีอยู่แล้วในระบบ`);
+                            const upperOfficerId = cleanOfficerId.toUpperCase();
+                            if (existingIds.has(upperOfficerId)) {
+                                rowErrors.push(`แถว ${rowNum}: รหัสเจ้าหน้าที่ ${upperOfficerId} มีอยู่แล้วในระบบ`);
                             }
                         }
                         
-                        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+                        if (!cleanName) {
                             rowErrors.push(`แถว ${rowNum}: ชื่อ-นามสกุลไม่ถูกต้อง`);
                         }
                         
-                        if (!phone || typeof phone !== 'string' || phone.trim().length === 0) {
+                        if (!cleanPhone) {
                             rowErrors.push(`แถว ${rowNum}: เบอร์โทรศัพท์ไม่ถูกต้อง`);
                         }
                         
-                        if (!email || typeof email !== 'string' || !email.trim().includes('@')) {
+                        if (!cleanEmail || !cleanEmail.includes('@')) {
                             rowErrors.push(`แถว ${rowNum}: อีเมลไม่ถูกต้อง`);
                         }
                         
-                        if (!orgId || typeof orgId !== 'string') {
+                        if (!cleanOrgId) {
                             rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงานไม่ถูกต้อง`);
                         } else {
-                            const cleanOrgId = String(orgId).trim().toUpperCase();
-                            if (!orgIds.has(cleanOrgId)) {
-                                rowErrors.push(`แถว ${rowNum}: ไม่พบหน่วยงาน ${cleanOrgId} ในระบบ`);
+                            const upperOrgId = cleanOrgId.toUpperCase();
+                            if (!orgIds.has(upperOrgId)) {
+                                rowErrors.push(`แถว ${rowNum}: ไม่พบหน่วยงาน ${upperOrgId} ในระบบ`);
                             }
                         }
                         
@@ -1915,37 +1958,49 @@
                             errors.push(...rowErrors);
                         } else {
                             importData.push({
-                                id: String(officerId).trim().toUpperCase(),
-                                name: String(name).trim(),
-                                phone: String(phone).trim(),
-                                email: String(email).trim(),
-                                orgId: String(orgId).trim().toUpperCase(),
+                                id: cleanOfficerId.toUpperCase(),
+                                name: cleanName,
+                                phone: cleanPhone,
+                                email: cleanEmail,
+                                orgId: cleanOrgId.toUpperCase(),
                                 createdAt: new Date().toISOString()
                             });
                         }
                     });
                     
+                    console.log('Import data created:', importData.length, 'items');
+                    console.log('Errors found:', errors.length);
+                    
                     // Show preview
+                    console.log('Showing preview for', importData.length, 'items');
                     const previewDiv = document.getElementById('importPreview');
                     const previewTableBody = document.getElementById('previewTableBody');
                     const previewCount = document.getElementById('previewCount');
                     
+                    if (!previewDiv || !previewTableBody || !previewCount) {
+                        console.error('Preview elements not found');
+                        alert('เกิดข้อผิดพลาดในการแสดงตัวอย่าง');
+                        return;
+                    }
+                    
                     previewTableBody.innerHTML = '';
-                    importData.forEach(officer => {
+                    importData.forEach((officer, index) => {
+                        console.log(`Creating preview row ${index + 1}:`, officer);
                         const org = organizations.find(o => o.id === officer.orgId);
-                        const row = `
-                            <tr class="border-b">
-                                <td class="px-2 py-1">${officer.id}</td>
-                                <td class="px-2 py-1">${officer.name}</td>
-                                <td class="px-2 py-1">${officer.phone}</td>
-                                <td class="px-2 py-1">${officer.email}</td>
-                                <td class="px-2 py-1">${org ? org.name : officer.orgId}</td>
-                            </tr>
+                        const row = document.createElement('tr');
+                        row.className = 'border-b';
+                        row.innerHTML = `
+                            <td class="px-2 py-1">${officer.id}</td>
+                            <td class="px-2 py-1">${officer.name}</td>
+                            <td class="px-2 py-1">${officer.phone}</td>
+                            <td class="px-2 py-1">${officer.email}</td>
+                            <td class="px-2 py-1">${org ? org.name : officer.orgId}</td>
                         `;
-                        previewTableBody.innerHTML += row;
+                        previewTableBody.appendChild(row);
                     });
                     
                     previewCount.textContent = `พบข้อมูลที่ถูกต้อง ${importData.length} รายการ`;
+                    console.log('Making preview visible');
                     previewDiv.classList.remove('hidden');
                     
                     // Show errors if any
@@ -1969,11 +2024,73 @@
                     
                 } catch (error) {
                     console.error('Error reading Excel file:', error);
-                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ' + error.message);
                 }
             };
             
+            reader.onerror = function(error) {
+                console.error('FileReader error:', error);
+                alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+            };
+            
             reader.readAsArrayBuffer(file);
+        }
+        
+        function downloadExcelTemplate() {
+            try {
+                // Create sample data for template
+                const templateData = [
+                    ['รหัสเจ้าหน้าที่', 'ชื่อ-นามสกุล', 'เบอร์โทรศัพท์', 'อีเมล', 'รหัสหน่วยงาน'],
+                    ['OFF001', 'นายสมชาย ใจดี', '081-234-5678', 'somchai@bma.go.th', 'ORG001'],
+                    ['OFF002', 'นางสมใส สุขใจ', '082-345-6789', 'somsai@bma.go.th', 'ORG002'],
+                    ['OFF003', 'นายวิชัย เก่งดี', '083-456-7890', 'wichai@bma.go.th', 'ORG001']
+                ];
+                
+                // Add available organizations as reference
+                if (organizations.length > 0) {
+                    templateData.push([]);
+                    templateData.push(['หน่วยงานที่มีในระบบ:']);
+                    organizations.forEach(org => {
+                        templateData.push([org.id, org.name]);
+                    });
+                }
+                
+                // Create workbook and worksheet
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+                
+                // Style the header row
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (!worksheet[cellAddress]) continue;
+                    worksheet[cellAddress].s = {
+                        font: { bold: true },
+                        fill: { fgColor: { rgb: "FFFFAA" } }
+                    };
+                }
+                
+                // Set column widths
+                worksheet['!cols'] = [
+                    { width: 15 }, // รหัสเจ้าหน้าที่
+                    { width: 25 }, // ชื่อ-นามสกุล
+                    { width: 15 }, // เบอร์โทรศัพท์
+                    { width: 30 }, // อีเมล
+                    { width: 15 }  // รหัสหน่วยงาน
+                ];
+                
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Officers Template');
+                
+                // Generate and download file
+                const filename = 'SRRT_Officers_Template_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+                XLSX.writeFile(workbook, filename);
+                
+                console.log('Template downloaded:', filename);
+                
+            } catch (error) {
+                console.error('Error creating template:', error);
+                alert('เกิดข้อผิดพลาดในการสร้าง template');
+            }
         }
         
         async function importOfficers() {
