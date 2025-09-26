@@ -8,6 +8,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     
+    <!-- SheetJS library for Excel import -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    
     <!-- Firebase SDK -->
     <script type="module">
         // Import the functions you need from the SDKs you need
@@ -370,7 +373,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-dark-green">ฐานข้อมูลเจ้าหน้าที่</h2>
-                        <button onclick="showAddOfficerModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มเจ้าหน้าที่ใหม่</button>
+                        <div class="flex space-x-2">
+                            <button onclick="showImportOfficersModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">นำเข้าจาก Excel</button>
+                            <button onclick="showAddOfficerModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มเจ้าหน้าที่ใหม่</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border border-gray-200">
@@ -1765,6 +1771,273 @@
             } catch (error) {
                 console.error('Error adding member:', error);
                 alert('เกิดข้อผิดพลาดในการเพิ่มสมาชิก');
+            }
+        }
+        
+        // Import officers from Excel function
+        function showImportOfficersModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าข้อมูลเจ้าหน้าที่จากไฟล์ Excel</h3>
+                <div class="space-y-4">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <h4 class="font-medium text-yellow-800 mb-2">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
+                        <ul class="text-sm text-yellow-700 space-y-1">
+                            <li>• คอลัมน์ A: รหัสเจ้าหน้าที่ (เช่น OFF001)</li>
+                            <li>• คอลัมน์ B: ชื่อ-นามสกุล</li>
+                            <li>• คอลัมน์ C: เบอร์โทรศัพท์</li>
+                            <li>• คอลัมน์ D: อีเมล</li>
+                            <li>• คอลัมน์ E: รหัสหน่วยงาน (เช่น ORG001)</li>
+                            <li>• แถวแรกเป็นหัวตาราง (จะข้ามไป)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">เลือกไฟล์ Excel</label>
+                        <input type="file" id="excelFile" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
+                    </div>
+                    <div id="importPreview" class="hidden">
+                        <h4 class="font-medium text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
+                        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-2 py-1 text-left">รหัส</th>
+                                        <th class="px-2 py-1 text-left">ชื่อ-นามสกุล</th>
+                                        <th class="px-2 py-1 text-left">โทรศัพท์</th>
+                                        <th class="px-2 py-1 text-left">อีเมล</th>
+                                        <th class="px-2 py-1 text-left">หน่วยงาน</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="previewTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <span id="previewCount"></span>
+                        </div>
+                    </div>
+                    <div id="importErrors" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">ข้อผิดพลาดที่พบ:</h4>
+                        <ul id="errorList" class="text-sm text-red-700 space-y-1">
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                    <button type="button" id="previewBtn" onclick="previewImport()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" disabled>ตัวอย่างข้อมูล</button>
+                    <button type="button" id="importBtn" onclick="importOfficers()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" disabled>นำเข้าข้อมูล</button>
+                </div>
+            `;
+            showModal(content);
+            
+            // Add file change listener
+            document.getElementById('excelFile').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const previewBtn = document.getElementById('previewBtn');
+                if (file) {
+                    previewBtn.disabled = false;
+                } else {
+                    previewBtn.disabled = true;
+                    document.getElementById('importBtn').disabled = true;
+                    document.getElementById('importPreview').classList.add('hidden');
+                    document.getElementById('importErrors').classList.add('hidden');
+                }
+            });
+        }
+        
+        let importData = [];
+        
+        function previewImport() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('กรุณาเลือกไฟล์ Excel');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Skip header row and process data
+                    const dataRows = jsonData.slice(1).filter(row => {
+                        return row.length > 0 && row[0]; // At least officer ID must exist
+                    });
+                    
+                    importData = [];
+                    const errors = [];
+                    const existingIds = new Set(officers.map(o => o.id));
+                    const orgIds = new Set(organizations.map(org => org.id));
+                    
+                    dataRows.forEach((row, index) => {
+                        const rowNum = index + 2; // +2 because we skipped header and arrays are 0-indexed
+                        const [officerId, name, phone, email, orgId] = row;
+                        
+                        // Validation
+                        const rowErrors = [];
+                        
+                        if (!officerId || typeof officerId !== 'string') {
+                            rowErrors.push(`แถว ${rowNum}: รหัสเจ้าหน้าที่ไม่ถูกต้อง`);
+                        } else {
+                            const cleanId = String(officerId).trim().toUpperCase();
+                            if (existingIds.has(cleanId)) {
+                                rowErrors.push(`แถว ${rowNum}: รหัสเจ้าหน้าที่ ${cleanId} มีอยู่แล้วในระบบ`);
+                            }
+                        }
+                        
+                        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+                            rowErrors.push(`แถว ${rowNum}: ชื่อ-นามสกุลไม่ถูกต้อง`);
+                        }
+                        
+                        if (!phone || typeof phone !== 'string' || phone.trim().length === 0) {
+                            rowErrors.push(`แถว ${rowNum}: เบอร์โทรศัพท์ไม่ถูกต้อง`);
+                        }
+                        
+                        if (!email || typeof email !== 'string' || !email.trim().includes('@')) {
+                            rowErrors.push(`แถว ${rowNum}: อีเมลไม่ถูกต้อง`);
+                        }
+                        
+                        if (!orgId || typeof orgId !== 'string') {
+                            rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงานไม่ถูกต้อง`);
+                        } else {
+                            const cleanOrgId = String(orgId).trim().toUpperCase();
+                            if (!orgIds.has(cleanOrgId)) {
+                                rowErrors.push(`แถว ${rowNum}: ไม่พบหน่วยงาน ${cleanOrgId} ในระบบ`);
+                            }
+                        }
+                        
+                        if (rowErrors.length > 0) {
+                            errors.push(...rowErrors);
+                        } else {
+                            importData.push({
+                                id: String(officerId).trim().toUpperCase(),
+                                name: String(name).trim(),
+                                phone: String(phone).trim(),
+                                email: String(email).trim(),
+                                orgId: String(orgId).trim().toUpperCase(),
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    });
+                    
+                    // Show preview
+                    const previewDiv = document.getElementById('importPreview');
+                    const previewTableBody = document.getElementById('previewTableBody');
+                    const previewCount = document.getElementById('previewCount');
+                    
+                    previewTableBody.innerHTML = '';
+                    importData.forEach(officer => {
+                        const org = organizations.find(o => o.id === officer.orgId);
+                        const row = `
+                            <tr class="border-b">
+                                <td class="px-2 py-1">${officer.id}</td>
+                                <td class="px-2 py-1">${officer.name}</td>
+                                <td class="px-2 py-1">${officer.phone}</td>
+                                <td class="px-2 py-1">${officer.email}</td>
+                                <td class="px-2 py-1">${org ? org.name : officer.orgId}</td>
+                            </tr>
+                        `;
+                        previewTableBody.innerHTML += row;
+                    });
+                    
+                    previewCount.textContent = `พบข้อมูลที่ถูกต้อง ${importData.length} รายการ`;
+                    previewDiv.classList.remove('hidden');
+                    
+                    // Show errors if any
+                    const errorsDiv = document.getElementById('importErrors');
+                    const errorList = document.getElementById('errorList');
+                    
+                    if (errors.length > 0) {
+                        errorList.innerHTML = '';
+                        errors.forEach(error => {
+                            const li = document.createElement('li');
+                            li.textContent = `• ${error}`;
+                            errorList.appendChild(li);
+                        });
+                        errorsDiv.classList.remove('hidden');
+                    } else {
+                        errorsDiv.classList.add('hidden');
+                    }
+                    
+                    // Enable import button if there's valid data
+                    document.getElementById('importBtn').disabled = importData.length === 0;
+                    
+                } catch (error) {
+                    console.error('Error reading Excel file:', error);
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        async function importOfficers() {
+            if (importData.length === 0) {
+                alert('ไม่มีข้อมูลที่จะนำเข้า');
+                return;
+            }
+            
+            if (!confirm(`ต้องการนำเข้าข้อมูลเจ้าหน้าที่ ${importData.length} รายการหรือไม่?`)) {
+                return;
+            }
+            
+            try {
+                const importBtn = document.getElementById('importBtn');
+                importBtn.disabled = true;
+                importBtn.textContent = 'กำลังนำเข้า...';
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const officer of importData) {
+                    try {
+                        // Add to local array
+                        officers.push(officer);
+                        
+                        // Save to Firebase
+                        const officerRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'officers'));
+                        await window.firebaseSet(officerRef, officer);
+                        
+                        // Initialize training data for new officer
+                        if (!trainingData[officer.id]) {
+                            trainingData[officer.id] = {};
+                        }
+                        
+                        // Initialize confirmation status for organization if needed
+                        if (!confirmationStatus[officer.orgId]) {
+                            confirmationStatus[officer.orgId] = { teamConfirmed: false, orgConfirmed: false };
+                        }
+                        
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Error importing officer ${officer.id}:`, error);
+                        failCount++;
+                    }
+                }
+                
+                // Save updated training data and confirmation status
+                await saveToFirebase('trainingData', trainingData);
+                await saveToFirebase('confirmationStatus', confirmationStatus);
+                
+                await logActivity('นำเข้า', `นำเข้าข้อมูลเจ้าหน้าที่จาก Excel: สำเร็จ ${successCount} รายการ${failCount > 0 ? `, ไม่สำเร็จ ${failCount} รายการ` : ''}`);
+                
+                hideModal();
+                loadAllOfficersData(); // Refresh officers data
+                
+                if (failCount === 0) {
+                    alert(`นำเข้าข้อมูลเรียบร้อย ${successCount} รายการ`);
+                } else {
+                    alert(`นำเข้าข้อมูลเสร็จสิ้น สำเร็จ ${successCount} รายการ ไม่สำเร็จ ${failCount} รายการ`);
+                }
+                
+            } catch (error) {
+                console.error('Error importing officers:', error);
+                alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
             }
         }
         
