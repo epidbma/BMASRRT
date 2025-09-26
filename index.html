@@ -88,12 +88,6 @@
                 <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
             </form>
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
-            <div class="mt-6 text-xs text-gray-500 text-center">
-                <p>บัญชีทดสอบ:</p>
-                <p>เจ้าหน้าที่ (เขตบางรัก): officer1 / pass123</p>
-                <p>เจ้าหน้าที่ (เขตสาทร): officer2 / pass123</p>
-                <p>ผู้ดูแลระบบ: admin1 / admin123</p>
-            </div>
         </div>
     </div>
 
@@ -477,38 +471,18 @@
         let currentUser = null;
         let userRole = null;
         
-        const users = [
-            { username: 'officer1', password: 'pass123', name: 'นายสมชาย ใจดี', role: 'officer', orgId: 'BMA001' },
-            { username: 'officer2', password: 'pass123', name: 'นางสาวมาลี สวยงาม', role: 'officer', orgId: 'BMA002' },
-            { username: 'admin1', password: 'admin123', name: 'นายผู้ดูแล ระบบ', role: 'admin', orgId: 'BMA000' }
-        ];
+        const users = [];
 
-        const organizations = [
-            { id: 'BMA001', name: 'สำนักงานเขตบางรัก', phone: '02-234-5678', fax: '02-234-5679', email: 'bangrak@bma.go.th' },
-            { id: 'BMA002', name: 'สำนักงานเขตสาทร', phone: '02-234-5680', fax: '02-234-5681', email: 'sathorn@bma.go.th' },
-            { id: 'BMA003', name: 'สำนักงานเขตวัฒนา', phone: '02-234-5682', fax: '02-234-5683', email: 'watthana@bma.go.th' },
-            { id: 'BMA000', name: 'สำนักงานส่วนกลาง', phone: '02-123-4567', fax: '02-123-4568', email: 'admin@bma.go.th' }
-        ];
+        const organizations = [];
 
-        const officers = [
-            { id: 'OFF001', name: 'นายสมชาย ใจดี', phone: '081-234-5678', email: 'somchai@bma.go.th', orgId: 'BMA001' },
-            { id: 'OFF002', name: 'นางสุดา เก่งกาจ', phone: '081-234-5679', email: 'suda@bma.go.th', orgId: 'BMA001' },
-            { id: 'OFF003', name: 'นางสาวมาลี สวยงาม', phone: '081-234-5680', email: 'malee@bma.go.th', orgId: 'BMA002' },
-            { id: 'OFF004', name: 'นายวิชัย มั่นคง', phone: '081-234-5681', email: 'wichai@bma.go.th', orgId: 'BMA002' },
-            { id: 'OFF005', name: 'นางสาวนิตยา ฉลาด', phone: '081-234-5682', email: 'nitaya@bma.go.th', orgId: 'BMA003' },
-            { id: 'OFF006', name: 'นายประยุทธ์ รอบรู้', phone: '081-234-5683', email: 'prayuth@bma.go.th', orgId: 'BMA003' }
-        ];
+        const officers = [];
 
         const trainingData = {};
 
         const activityLog = [];
 
         // Confirmation status for each organization
-        const confirmationStatus = {
-            'BMA001': { teamConfirmed: false, orgConfirmed: false },
-            'BMA002': { teamConfirmed: false, orgConfirmed: false },
-            'BMA003': { teamConfirmed: false, orgConfirmed: false }
-        };
+        const confirmationStatus = {};
 
         // Firebase functions
         async function initializeFirebaseData() {
