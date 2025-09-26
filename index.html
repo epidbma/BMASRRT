@@ -1676,20 +1676,336 @@
             }
         }
         
-        // Placeholder functions for other modals and operations
-        function showAddMemberModal() { alert('ฟีเจอร์เพิ่มสมาชิกใหม่'); }
-        function showAddOfficerModal() { alert('ฟีเจอร์เพิ่มเจ้าหน้าที่ใหม่'); }
-        function showAddYearModal() { alert('ฟีเจอร์เพิ่มปีใหม่'); }
-        function showAddOrgModal() { alert('ฟีเจอร์เพิ่มหน่วยงานใหม่'); }
-        function showAddUserModal() { alert('ฟีเจอร์เพิ่มบัญชีใหม่'); }
-        function editMember(id) { alert('ฟีเจอร์แก้ไขสมาชิก: ' + id); }
-        function deleteMember(id) { alert('ฟีเจอร์ลบสมาชิก: ' + id); }
-        function editOfficer(id) { alert('ฟีเจอร์แก้ไขเจ้าหน้าที่: ' + id); }
-        function deleteOfficer(id) { alert('ฟีเจอร์ลบเจ้าหน้าที่: ' + id); }
-        function editOrganization(id) { alert('ฟีเจอร์แก้ไขหน่วยงาน: ' + id); }
-        function deleteOrganization(id) { alert('ฟีเจอร์ลบหน่วยงาน: ' + id); }
-        function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username); }
-        function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username); }
+        // Modal functions for adding new records
+        function showAddMemberModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">เพิ่มสมาชิกใหม่ในทีม</h3>
+                <form id="addMemberForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">รหัสเจ้าหน้าที่</label>
+                            <input type="text" id="memberOfficerId" placeholder="เช่น OFF001" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                            <input type="text" id="memberName" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="memberPhone" placeholder="081-234-5678" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+                            <input type="email" id="memberEmail" placeholder="example@bma.go.th" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">เพิ่ลสมาชิก</button>
+                    </div>
+                </form>
+            `;
+            showModal(content);
+            
+            // Add form submit handler
+            document.getElementById('addMemberForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await addNewMember();
+            });
+        }
+        
+        async function addNewMember() {
+            try {
+                const officerId = document.getElementById('memberOfficerId').value.trim().toUpperCase();
+                const name = document.getElementById('memberName').value.trim();
+                const phone = document.getElementById('memberPhone').value.trim();
+                const email = document.getElementById('memberEmail').value.trim();
+                
+                // Validation
+                if (!officerId || !name || !phone || !email) {
+                    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    return;
+                }
+                
+                // Check if officer ID already exists
+                const existingOfficer = officers.find(o => o.id === officerId);
+                if (existingOfficer) {
+                    alert('รหัสเจ้าหน้าที่นี้มีอยู่แล้ว');
+                    return;
+                }
+                
+                const newOfficer = {
+                    id: officerId,
+                    name: name,
+                    phone: phone,
+                    email: email,
+                    orgId: currentUser.orgId,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to local array
+                officers.push(newOfficer);
+                
+                // Save to Firebase
+                const officerRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'officers'));
+                await window.firebaseSet(officerRef, newOfficer);
+                
+                // Initialize training data for new officer
+                if (!trainingData[officerId]) {
+                    trainingData[officerId] = {};
+                    await saveToFirebase('trainingData', trainingData);
+                }
+                
+                await logActivity('เพิ่ม', `เพิ่มสมาชิกใหม่: ${name} (${officerId})`);
+                
+                hideModal();
+                loadTeamData(); // Refresh team data
+                alert('เพิ่มสมาชิกใหม่เรียบร้อยแล้ว');
+                
+            } catch (error) {
+                console.error('Error adding member:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มสมาชิก');
+            }
+        }
+        
+        function showAddOfficerModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">เพิ่มเจ้าหน้าที่ใหม่</h3>
+                <form id="addOfficerForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">รหัสเจ้าหน้าที่</label>
+                            <input type="text" id="officerId" placeholder="เช่น OFF001" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                            <input type="text" id="officerName" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="officerPhone" placeholder="081-234-5678" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+                            <input type="email" id="officerEmail" placeholder="example@bma.go.th" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">หน่วยงาน</label>
+                            <select id="officerOrgId" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                                <option value="">เลือกหน่วยงาน</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">เพิ่มเจ้าหน้าที่</button>
+                    </div>
+                </form>
+            `;
+            showModal(content);
+            
+            // Populate organization dropdown
+            const orgSelect = document.getElementById('officerOrgId');
+            organizations.forEach(org => {
+                const option = document.createElement('option');
+                option.value = org.id;
+                option.textContent = org.name;
+                orgSelect.appendChild(option);
+            });
+            
+            // Add form submit handler
+            document.getElementById('addOfficerForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await addNewOfficer();
+            });
+        }
+        
+        async function addNewOfficer() {
+            try {
+                const officerId = document.getElementById('officerId').value.trim().toUpperCase();
+                const name = document.getElementById('officerName').value.trim();
+                const phone = document.getElementById('officerPhone').value.trim();
+                const email = document.getElementById('officerEmail').value.trim();
+                const orgId = document.getElementById('officerOrgId').value;
+                
+                // Validation
+                if (!officerId || !name || !phone || !email || !orgId) {
+                    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    return;
+                }
+                
+                // Check if officer ID already exists
+                const existingOfficer = officers.find(o => o.id === officerId);
+                if (existingOfficer) {
+                    alert('รหัสเจ้าหน้าที่นี้มีอยู่แล้ว');
+                    return;
+                }
+                
+                const newOfficer = {
+                    id: officerId,
+                    name: name,
+                    phone: phone,
+                    email: email,
+                    orgId: orgId,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to local array
+                officers.push(newOfficer);
+                
+                // Save to Firebase
+                const officerRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'officers'));
+                await window.firebaseSet(officerRef, newOfficer);
+                
+                // Initialize training data for new officer
+                if (!trainingData[officerId]) {
+                    trainingData[officerId] = {};
+                    await saveToFirebase('trainingData', trainingData);
+                }
+                
+                // Initialize confirmation status for new organization if needed
+                if (!confirmationStatus[orgId]) {
+                    confirmationStatus[orgId] = { teamConfirmed: false, orgConfirmed: false };
+                    await saveToFirebase('confirmationStatus', confirmationStatus);
+                }
+                
+                await logActivity('เพิ่ม', `เพิ่มเจ้าหน้าที่ใหม่: ${name} (${officerId})`);
+                
+                hideModal();
+                loadAllOfficersData(); // Refresh officers data
+                alert('เพิ่มเจ้าหน้าที่เรียบร้อยแล้ว');
+                
+            } catch (error) {
+                console.error('Error adding officer:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มเจ้าหน้าที่');
+            }
+        }
+        // Other placeholder functions (to be implemented later)
+        function showAddYearModal() { alert('ฟีเจอร์เพิ่มปีใหม่ - จะพัฒนาในอนาคต'); }
+        function showAddOrgModal() { alert('ฟีเจอร์เพิ่มหน่วยงานใหม่ - จะพัฒนาในอนาคต'); }
+        function showAddUserModal() { alert('ฟีเจอร์เพิ่มบัญชีใหม่ - จะพัฒนาในอนาคต'); }
+        // Edit and Delete functions
+        function editMember(id) {
+            const officer = officers.find(o => o.id === id);
+            if (!officer) {
+                alert('ไม่พบข้อมูลเจ้าหน้าที่');
+                return;
+            }
+            
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">แก้ไขข้อมูลสมาชิก</h3>
+                <form id="editMemberForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">รหัสเจ้าหน้าที่</label>
+                            <input type="text" id="editMemberOfficerId" value="${officer.id}" class="w-full px-3 py-2 border border-gray-300 rounded bg-gray-100" readonly>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                            <input type="text" id="editMemberName" value="${officer.name}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
+                            <input type="tel" id="editMemberPhone" value="${officer.phone}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
+                            <input type="email" id="editMemberEmail" value="${officer.email}" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">บันทึก</button>
+                    </div>
+                </form>
+            `;
+            showModal(content);
+            
+            document.getElementById('editMemberForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await updateMember(id);
+            });
+        }
+        
+        async function updateMember(id) {
+            try {
+                const name = document.getElementById('editMemberName').value.trim();
+                const phone = document.getElementById('editMemberPhone').value.trim();
+                const email = document.getElementById('editMemberEmail').value.trim();
+                
+                if (!name || !phone || !email) {
+                    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    return;
+                }
+                
+                const officer = officers.find(o => o.id === id);
+                if (officer) {
+                    const oldData = `${officer.name}, ${officer.phone}, ${officer.email}`;
+                    
+                    officer.name = name;
+                    officer.phone = phone;
+                    officer.email = email;
+                    officer.updatedAt = new Date().toISOString();
+                    
+                    await saveToFirebase('officers', officers);
+                    
+                    const newData = `${name}, ${phone}, ${email}`;
+                    await logActivity('แก้ไข', `แก้ไขข้อมูลสมาชิก ${id}`, oldData, newData);
+                    
+                    hideModal();
+                    loadTeamData();
+                    alert('บันทึกข้อมูลเรียบร้อยแล้ว');
+                }
+                
+            } catch (error) {
+                console.error('Error updating member:', error);
+                alert('เกิดข้อผิดพลาดในการบันทึกข้อมูล');
+            }
+        }
+        
+        async function deleteMember(id) {
+            if (!confirm('ต้องการลบสมาชิกนี้หรือไม่?')) {
+                return;
+            }
+            
+            try {
+                const officer = officers.find(o => o.id === id);
+                if (officer) {
+                    // Remove from local array
+                    const index = officers.findIndex(o => o.id === id);
+                    officers.splice(index, 1);
+                    
+                    // Remove training data
+                    if (trainingData[id]) {
+                        delete trainingData[id];
+                        await saveToFirebase('trainingData', trainingData);
+                    }
+                    
+                    await saveToFirebase('officers', officers);
+                    await logActivity('ลบ', `ลบสมาชิก: ${officer.name} (${id})`);
+                    
+                    loadTeamData();
+                    alert('ลบสมาชิกเรียบร้อยแล้ว');
+                }
+                
+            } catch (error) {
+                console.error('Error deleting member:', error);
+                alert('เกิดข้อผิดพลาดในการลบสมาชิก');
+            }
+        }
+        
+        function editOfficer(id) {
+            editMember(id); // Use the same function as editMember
+        }
+        
+        function deleteOfficer(id) {
+            deleteMember(id); // Use the same function as deleteMember
+        }
+        // Management functions (to be fully implemented later)
+        function editOrganization(id) { alert('ฟีเจอร์แก้ไขหน่วยงาน: ' + id + ' - จะพัฒนาในอนาคต'); }
+        function deleteOrganization(id) { alert('ฟีเจอร์ลบหน่วยงาน: ' + id + ' - จะพัฒนาในอนาคต'); }
+        function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username + ' - จะพัฒนาในอนาคต'); }
+        function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username + ' - จะพัฒนาในอนาคต'); }
         
         // Test Firebase connection
         async function testFirebaseConnection() {
