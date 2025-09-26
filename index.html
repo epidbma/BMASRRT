@@ -85,7 +85,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
                     <input type="password" id="password" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
                 </div>
-                <button type="submit" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
+                <button type="submit" id="loginBtn" class="w-full bg-medium-green text-white py-2 px-4 rounded-md hover:bg-dark-green transition duration-200">เข้าสู่ระบบ</button>
             </form>
             
             <!-- Register Form -->
@@ -118,7 +118,7 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">รหัสหน่วยงาน</label>
                     <input type="text" id="regOrgId" placeholder="เช่น BMA001, BMA002" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-medium-green" required>
                 </div>
-                <button type="submit" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">ลงทะเบียน</button>
+                <button type="submit" id="registerBtn" class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition duration-200">ลงทะเบียน</button>
             </form>
             
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
@@ -127,6 +127,11 @@
             <div class="mt-6 text-center">
                 <button id="toggleToRegister" class="text-medium-green hover:text-dark-green text-sm">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</button>
                 <button id="toggleToLogin" class="text-medium-green hover:text-dark-green text-sm hidden">มีบัญชีแล้ว? เข้าสู่ระบบ</button>
+            </div>
+            
+            <!-- Firebase Connection Status -->
+            <div id="connectionStatus" class="mt-4 text-xs text-center">
+                <span class="text-gray-500">🔄 กำลังตรวจสอบการเชื่อมต่อ...</span>
             </div>
         </div>
     </div>
@@ -535,11 +540,18 @@
                 
                 if (!existingUsers || (Array.isArray(existingUsers) && existingUsers.length === 0) || Object.keys(existingUsers).length === 0) {
                     // สร้างผู้ใช้แรกเพื่อการทดสอบ
-                    const defaultUsers = [
-                        { username: 'admin', password: 'admin123', name: 'ผู้ดูแลระบบ', role: 'admin', orgId: 'ADMIN' }
-                    ];
+                    const defaultUser = { 
+                        username: 'admin', 
+                        password: 'admin123', 
+                        name: 'ผู้ดูแลระบบ', 
+                        role: 'admin', 
+                        orgId: 'ADMIN',
+                        createdAt: new Date().toISOString()
+                    };
                     
-                    await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'users'), defaultUsers);
+                    // ใช้ push() เพื่อสร้าง unique key
+                    const userRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'users'));
+                    await window.firebaseSet(userRef, defaultUser);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'organizations'), organizations);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'officers'), officers);
                     await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, 'trainingData'), trainingData);
@@ -574,7 +586,16 @@
                 // อัพเดต local arrays ด้วยข้อมูลจาก Firebase
                 if (usersSnap.val()) {
                     users.length = 0;
-                    users.push(...usersSnap.val());
+                    // แปลง Firebase Object เป็น Array
+                    const firebaseUsers = usersSnap.val();
+                    if (Array.isArray(firebaseUsers)) {
+                        users.push(...firebaseUsers);
+                    } else {
+                        // Firebase คืน Object, แปลงเป็น Array
+                        const userArray = Object.values(firebaseUsers);
+                        users.push(...userArray);
+                    }
+                    console.log('Loaded users from Firebase:', users.length, 'users');
                 }
                 if (orgsSnap.val()) {
                     organizations.length = 0;
@@ -604,15 +625,35 @@
         
         async function saveToFirebase(path, data) {
             try {
+                console.log(`Attempting to save to Firebase path: ${path}`, data);
                 await window.firebaseSet(window.firebaseRef(window.firebaseDatabase, path), data);
-                console.log(`Data saved to Firebase: ${path}`);
+                console.log(`Data saved to Firebase successfully: ${path}`);
+                return true;
             } catch (error) {
                 console.error(`Error saving to Firebase (${path}):`, error);
+                console.error('Error details:', error.message);
+                throw error;
             }
+        }
+
+        // Helper functions
+        function showError(message) {
+            document.getElementById('loginError').textContent = message;
+            document.getElementById('loginError').classList.remove('hidden');
+        }
+        
+        function clearError() {
+            document.getElementById('loginError').classList.add('hidden');
+        }
+        
+        function resetButton(button, originalText) {
+            button.textContent = originalText;
+            button.disabled = false;
         }
 
         // Toggle between login and register forms
         document.getElementById('toggleToRegister').addEventListener('click', function() {
+            clearError();
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('registerForm').classList.remove('hidden');
             document.getElementById('toggleToRegister').classList.add('hidden');
@@ -625,29 +666,51 @@
             document.getElementById('loginForm').classList.remove('hidden');
             document.getElementById('toggleToLogin').classList.add('hidden');
             document.getElementById('toggleToRegister').classList.remove('hidden');
-            document.getElementById('loginError').classList.add('hidden');
+            clearError();
         });
 
         // Register functionality
         document.getElementById('registerForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const username = document.getElementById('regUsername').value;
+            
+            // Show loading state
+            const registerBtn = document.getElementById('registerBtn');
+            const originalText = registerBtn.textContent;
+            registerBtn.textContent = 'กำลังลงทะเบียน...';
+            registerBtn.disabled = true;
+            
+            const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const confirmPassword = document.getElementById('regConfirmPassword').value;
-            const fullName = document.getElementById('regFullName').value;
+            const fullName = document.getElementById('regFullName').value.trim();
             const role = document.getElementById('regRole').value;
-            const orgId = document.getElementById('regOrgId').value;
+            const orgId = document.getElementById('regOrgId').value.trim().toUpperCase();
             
-            // Validation
+            // Clear previous errors
+            document.getElementById('loginError').classList.add('hidden');
+            
+            // Enhanced Validation
+            if (!username || !password || !fullName || !role || !orgId) {
+                showError('กรุณากรอกข้อมูลให้ครบถ้วน');
+                resetButton(registerBtn, originalText);
+                return;
+            }
+            
+            if (username.length < 3) {
+                showError('ชื่อผู้ใช้ต้องมีอย่างน้อย 3 ตัวอักษร');
+                resetButton(registerBtn, originalText);
+                return;
+            }
+            
             if (password !== confirmPassword) {
-                document.getElementById('loginError').textContent = 'รหัสผ่านไม่ตรงกัน';
-                document.getElementById('loginError').classList.remove('hidden');
+                showError('รหัสผ่านไม่ตรงกัน');
+                resetButton(registerBtn, originalText);
                 return;
             }
             
             if (password.length < 6) {
-                document.getElementById('loginError').textContent = 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
-                document.getElementById('loginError').classList.remove('hidden');
+                showError('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+                resetButton(registerBtn, originalText);
                 return;
             }
             
@@ -669,13 +732,18 @@
                     password: password,
                     name: fullName,
                     role: role,
-                    orgId: orgId
+                    orgId: orgId,
+                    createdAt: new Date().toISOString()
                 };
                 
+                // เพิ่มใน local array
                 users.push(newUser);
                 
-                // บันทึกลง Firebase
-                await saveToFirebase('users', users);
+                // บันทึกลง Firebase โดยใช้ push() เพื่อสร้าง unique key
+                const userRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'users'));
+                await window.firebaseSet(userRef, newUser);
+                
+                console.log('User registered and saved to Firebase:', newUser);
                 
                 // สร้าง confirmation status สำหรับหน่วยงานใหม่
                 if (role === 'officer' && !confirmationStatus[orgId]) {
@@ -698,16 +766,46 @@
                 
             } catch (error) {
                 console.error('Registration error:', error);
-                document.getElementById('loginError').textContent = 'เกิดข้อผิดพลาดในการลงทะเบียน';
-                document.getElementById('loginError').classList.remove('hidden');
+                if (error.message && error.message.includes('permission')) {
+                    showError('ไม่มีสิทธิ์ในการเขียนข้อมูล กรุณาตรวจสอบการตั้งค่า Firebase');
+                } else {
+                    showError('เกิดข้อผิดพลาดในการลงทะเบียน');
+                }
+            } finally {
+                resetButton(registerBtn, originalText);
             }
         });
+
+        // Helper functions
+        function showError(message) {
+            document.getElementById('loginError').textContent = message;
+            document.getElementById('loginError').classList.remove('hidden');
+        }
+        
+        function clearError() {
+            document.getElementById('loginError').classList.add('hidden');
+        }
+        
+        function resetButton(button, originalText) {
+            button.textContent = originalText;
+            button.disabled = false;
+        }
 
         // Login functionality
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
             e.preventDefault();
-            const username = document.getElementById('username').value;
+            
+            // Show loading state
+            const loginBtn = document.getElementById('loginBtn');
+            const originalText = loginBtn.textContent;
+            loginBtn.textContent = 'กำลังเข้าสู่ระบบ...';
+            loginBtn.disabled = true;
+            
+            const username = document.getElementById('username').value.trim();
             const password = document.getElementById('password').value;
+            
+            // Clear previous errors
+            document.getElementById('loginError').classList.add('hidden');
             
             try {
                 // โหลดข้อมูลผู้ใช้ล่าสุดจาก Firebase
@@ -725,13 +823,13 @@
                     showDefaultTab();
                     await logActivity('เข้าสู่ระบบ', 'เข้าสู่ระบบสำเร็จ');
                 } else {
-                    document.getElementById('loginError').textContent = 'ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง';
-                    document.getElementById('loginError').classList.remove('hidden');
+                    showError('ชื่อผู้ใช้งานหรือรหัสผ่านไม่ถูกต้อง');
                 }
             } catch (error) {
                 console.error('Login error:', error);
-                document.getElementById('loginError').textContent = 'เกิดข้อผิดพลาดในการเข้าสู่ระบบ';
-                document.getElementById('loginError').classList.remove('hidden');
+                showError('เกิดข้อผิดพลาดในการเข้าสู่ระบบ');
+            } finally {
+                resetButton(loginBtn, originalText);
             }
         });
 
@@ -1593,9 +1691,63 @@
         function editUser(username) { alert('ฟีเจอร์แก้ไขผู้ใช้: ' + username); }
         function deleteUser(username) { alert('ฟีเจอร์ลบผู้ใช้: ' + username); }
         
+        // Test Firebase connection
+        async function testFirebaseConnection() {
+            try {
+                console.log('Testing Firebase connection...');
+                
+                // ตรวจสอบว่า Firebase services พร้อมใช้งาน
+                if (!window.firebaseDatabase || !window.firebaseRef || !window.firebaseSet) {
+                    throw new Error('Firebase services not available');
+                }
+                
+                const testRef = window.firebaseRef(window.firebaseDatabase, 'connectionTest');
+                await window.firebaseSet(testRef, { 
+                    timestamp: Date.now(), 
+                    message: 'Connection test successful',
+                    userAgent: navigator.userAgent.substring(0, 50)
+                });
+                
+                console.log('✅ Firebase connection successful');
+                return true;
+            } catch (error) {
+                console.error('❌ Firebase connection failed:', error);
+                console.error('Error details:', {
+                    message: error.message,
+                    code: error.code,
+                    stack: error.stack
+                });
+                
+                // แสดงข้อความเฉพาะใน UI แทน alert
+                showError(`ไม่สามารถเชื่อมต่อ Firebase: ${error.message}`);
+                return false;
+            }
+        }
+
+        // Update connection status display
+        function updateConnectionStatus(isConnected, message = '') {
+            const statusEl = document.getElementById('connectionStatus');
+            if (statusEl) {
+                if (isConnected) {
+                    statusEl.innerHTML = '<span class="text-green-600">✅ เชื่อมต่อ Firebase สำเร็จ</span>';
+                } else {
+                    statusEl.innerHTML = `<span class="text-red-600">❌ ไม่สามารถเชื่อมต่อ Firebase: ${message}</span>`;
+                }
+            }
+        }
+
         // Initialize Firebase data when page loads
-        window.addEventListener('load', function() {
-            initializeFirebaseData();
+        window.addEventListener('load', async function() {
+            // รอให้ Firebase SDK โหลดเสร็จ
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            const connectionOk = await testFirebaseConnection();
+            if (connectionOk) {
+                updateConnectionStatus(true);
+                await initializeFirebaseData();
+            } else {
+                updateConnectionStatus(false, 'กรุณาตรวจสอบการตั้งค่า');
+            }
         });
     </script>
 <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9840a241618b45b3',t:'MTc1ODY5OTYyOC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
