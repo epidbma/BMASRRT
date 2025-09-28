@@ -305,7 +305,7 @@
                                     <div class="text-sm text-gray-600">สถานะข้อมูลหน่วยงาน:</div>
                                     <span id="orgConfirmStatus" class="inline-block px-3 py-1 rounded text-sm font-medium">-</span>
                                 </div>
-                                <button id="confirmTeamDataBtn" onclick="confirmTeamData()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
+                                <button id="confirmTeamDataBtn" onclick="confirmTeamDataEnhanced()" class="bg-green-600 text-white px-6 py-2 rounded hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed">
                                     ยืนยันข้อมูล
                                 </button>
                             </div>
@@ -1313,7 +1313,7 @@
                 
                 if (confirmStatus && confirmStatus.teamConfirmed) {
                     statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
-                    statusAction = `<button onclick="resetTeamConfirmation('${officer.orgId}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
+                    statusAction = `<button onclick="resetTeamConfirmationEnhanced('${officer.orgId}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
                 } else {
                     statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
                 }
@@ -1381,7 +1381,7 @@
                 
                 if (confirmStatus && confirmStatus.orgConfirmed) {
                     statusDisplay = '<span class="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">ยืนยันแล้ว</span>';
-                    statusAction = `<button onclick="resetOrgConfirmation('${org.id}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
+                    statusAction = `<button onclick="resetOrgConfirmationEnhanced('${org.id}')" class="bg-orange-500 text-white px-2 py-1 rounded text-xs hover:bg-orange-600 ml-1">รีเซ็ต</button>`;
                 } else {
                     statusDisplay = '<span class="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">รอยืนยัน</span>';
                 }
@@ -1957,6 +1957,89 @@
             } catch (error) {
                 console.error('Error adding member:', error);
                 alert('เกิดข้อผิดพลาดในการเพิ่มสมาชิก');
+            }
+        }
+        
+        // Enhanced confirmation functions with Firebase sync
+        async function confirmTeamDataEnhanced() {
+            const userOrg = currentUser.orgId;
+            
+            if (confirm('ต้องการยืนยันข้อมูลทีมและหน่วยงานหรือไม่?')) {
+                try {
+                    // อัปเดตสถานะการยืนยัน
+                    if (!confirmationStatus[userOrg]) {
+                        confirmationStatus[userOrg] = { teamConfirmed: false, orgConfirmed: false };
+                    }
+                    
+                    confirmationStatus[userOrg].teamConfirmed = true;
+                    confirmationStatus[userOrg].orgConfirmed = true;
+                    confirmationStatus[userOrg].confirmedAt = new Date().toISOString();
+                    confirmationStatus[userOrg].confirmedBy = currentUser.username;
+                    
+                    // บันทึกลง Firebase
+                    await saveToFirebase('confirmationStatus', confirmationStatus);
+                    
+                    // บันทึก activity log
+                    await logActivity('ยืนยัน', `ยืนยันข้อมูลทีมและหน่วยงาน ${userOrg}`);
+                    
+                    // อัปเดต display ในหน้าปัจจุบัน
+                    updateConfirmationStatusDisplay();
+                    
+                    console.log('Team data confirmed and saved to Firebase for org:', userOrg);
+                    alert('ยืนยันข้อมูลเรียบร้อยแล้ว ข้อมูลได้ถูกส่งให้ผู้ดูแลระบบตรวจสอบแล้ว');
+                    
+                } catch (error) {
+                    console.error('Error confirming team data:', error);
+                    alert('เกิดข้อผิดพลาดในการยืนยันข้อมูล กรุณาลองใหม่อีกครั้ง');
+                }
+            }
+        }
+        
+        async function resetTeamConfirmationEnhanced(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลทีมหรือไม่?')) {
+                try {
+                    if (!confirmationStatus[orgId]) {
+                        confirmationStatus[orgId] = { teamConfirmed: false, orgConfirmed: false };
+                    }
+                    
+                    confirmationStatus[orgId].teamConfirmed = false;
+                    confirmationStatus[orgId].resetAt = new Date().toISOString();
+                    confirmationStatus[orgId].resetBy = currentUser.username;
+                    
+                    // บันทึกลง Firebase
+                    await saveToFirebase('confirmationStatus', confirmationStatus);
+                    
+                    await logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลทีม ${orgId}`);
+                    loadAllOfficersData();
+                    alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+                } catch (error) {
+                    console.error('Error resetting team confirmation:', error);
+                    alert('เกิดข้อผิดพลาดในการรีเซ็ตสถานะ');
+                }
+            }
+        }
+        
+        async function resetOrgConfirmationEnhanced(orgId) {
+            if (confirm('ต้องการรีเซ็ตสถานะการยืนยันข้อมูลหน่วยงานหรือไม่?')) {
+                try {
+                    if (!confirmationStatus[orgId]) {
+                        confirmationStatus[orgId] = { teamConfirmed: false, orgConfirmed: false };
+                    }
+                    
+                    confirmationStatus[orgId].orgConfirmed = false;
+                    confirmationStatus[orgId].resetAt = new Date().toISOString();
+                    confirmationStatus[orgId].resetBy = currentUser.username;
+                    
+                    // บันทึกลง Firebase
+                    await saveToFirebase('confirmationStatus', confirmationStatus);
+                    
+                    await logActivity('รีเซ็ต', `รีเซ็ตสถานะการยืนยันข้อมูลหน่วยงาน ${orgId}`);
+                    loadOrganizationsData();
+                    alert('รีเซ็ตสถานะการยืนยันเรียบร้อยแล้ว');
+                } catch (error) {
+                    console.error('Error resetting org confirmation:', error);
+                    alert('เกิดข้อผิดพลาดในการรีเซ็ตสถานะ');
+                }
             }
         }
         
