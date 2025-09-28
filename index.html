@@ -432,7 +432,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-dark-green">ฐานข้อมูลหน่วยงาน</h2>
-                        <button onclick="showAddOrgModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มหน่วยงานใหม่</button>
+                        <div class="flex space-x-2">
+                            <button onclick="showImportOrganizationsModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">นำเข้าจาก Excel</button>
+                            <button onclick="showAddOrgModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มหน่วยงานใหม่</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border border-gray-200">
@@ -2270,6 +2273,365 @@
                 alert('เกิดข้อผิดพลาดในการเพิ่มเจ้าหน้าที่');
             }
         }
+        // Import organizations from Excel function
+        function showImportOrganizationsModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าข้อมูลหน่วยงานจากไฟล์ Excel</h3>
+                <div class="space-y-4">
+                    <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-medium text-yellow-800">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
+                            <button onclick="downloadOrganizationTemplate()" class="bg-yellow-600 text-white px-3 py-1 rounded text-sm hover:bg-yellow-700">ดาวน์โหลด Template</button>
+                        </div>
+                        <ul class="text-sm text-yellow-700 space-y-1">
+                            <li>• คอลัมน์ A: รหัสหน่วยงาน (เช่น ORG001)</li>
+                            <li>• คอลัมน์ B: ชื่อหน่วยงาน</li>
+                            <li>• คอลัมน์ C: โทรศัพท์</li>
+                            <li>• คอลัมน์ D: โทรสาร</li>
+                            <li>• คอลัมน์ E: อีเมล</li>
+                            <li>• คอลัมน์ F: ที่อยู่</li>
+                            <li>• แถวแรกเป็นหัวตาราง (จะข้ามไป)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">เลือกไฟล์ Excel</label>
+                        <input type="file" id="orgExcelFile" accept=".xlsx,.xls" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
+                    </div>
+                    <div id="orgImportPreview" class="hidden">
+                        <h4 class="font-medium text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
+                        <div class="max-h-60 overflow-y-auto border border-gray-200 rounded">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th class="px-2 py-1 text-left">รหัส</th>
+                                        <th class="px-2 py-1 text-left">ชื่อหน่วยงาน</th>
+                                        <th class="px-2 py-1 text-left">โทรศัพท์</th>
+                                        <th class="px-2 py-1 text-left">โทรสาร</th>
+                                        <th class="px-2 py-1 text-left">อีเมล</th>
+                                        <th class="px-2 py-1 text-left">ที่อยู่</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="orgPreviewTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <span id="orgPreviewCount"></span>
+                        </div>
+                    </div>
+                    <div id="orgImportErrors" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">ข้อผิดพลาดที่พบ:</h4>
+                        <ul id="orgErrorList" class="text-sm text-red-700 space-y-1">
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                    <button type="button" id="orgPreviewBtn" onclick="previewOrganizationImport()" class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700" disabled>ตัวอย่างข้อมูล</button>
+                    <button type="button" id="orgImportBtn" onclick="importOrganizations()" class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700" disabled>นำเข้าข้อมูล</button>
+                </div>
+            `;
+            showModal(content);
+            
+            // Add file change listener
+            document.getElementById('orgExcelFile').addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                const previewBtn = document.getElementById('orgPreviewBtn');
+                if (file) {
+                    previewBtn.disabled = false;
+                } else {
+                    previewBtn.disabled = true;
+                    document.getElementById('orgImportBtn').disabled = true;
+                    document.getElementById('orgImportPreview').classList.add('hidden');
+                    document.getElementById('orgImportErrors').classList.add('hidden');
+                }
+            });
+        }
+        
+        let orgImportData = [];
+        
+        function downloadOrganizationTemplate() {
+            try {
+                // Create sample data for template
+                const templateData = [
+                    ['รหัสหน่วยงาน', 'ชื่อหน่วยงาน', 'โทรศัพท์', 'โทรสาร', 'อีเมล', 'ที่อยู่'],
+                    ['ORG001', 'สำนักงานสาธารณสุข เขตจตุจักร', '02-123-4567', '02-123-4568', 'health1@bma.go.th', '123 ถ.ราชวิถี เขตจตุจักร'],
+                    ['ORG002', 'สำนักงานสาธารณสุข เขตดินแดง', '02-234-5678', '02-234-5679', 'health2@bma.go.th', '456 ถ.ดินแดง เขตดินแดง'],
+                    ['ORG003', 'สำนักงานสาธารณสุข เขตบางกะปิ', '02-345-6789', '02-345-6790', 'health3@bma.go.th', '789 ถ.ประชาราษฎร์ เขตบางกะปิ']
+                ];
+                
+                // Create workbook and worksheet
+                const workbook = XLSX.utils.book_new();
+                const worksheet = XLSX.utils.aoa_to_sheet(templateData);
+                
+                // Style the header row
+                const range = XLSX.utils.decode_range(worksheet['!ref']);
+                for (let col = range.s.c; col <= range.e.c; col++) {
+                    const cellAddress = XLSX.utils.encode_cell({ r: 0, c: col });
+                    if (!worksheet[cellAddress]) continue;
+                    worksheet[cellAddress].s = {
+                        font: { bold: true },
+                        fill: { fgColor: { rgb: "FFFFAA" } }
+                    };
+                }
+                
+                // Set column widths
+                worksheet['!cols'] = [
+                    { width: 12 }, // รหัสหน่วยงาน
+                    { width: 35 }, // ชื่อหน่วยงาน
+                    { width: 15 }, // โทรศัพท์
+                    { width: 15 }, // โทรสาร
+                    { width: 25 }, // อีเมล
+                    { width: 40 }  // ที่อยู่
+                ];
+                
+                XLSX.utils.book_append_sheet(workbook, worksheet, 'Organizations Template');
+                
+                // Generate and download file
+                const filename = 'SRRT_Organizations_Template_' + new Date().toISOString().slice(0, 10) + '.xlsx';
+                XLSX.writeFile(workbook, filename);
+                
+                console.log('Organization template downloaded:', filename);
+                
+            } catch (error) {
+                console.error('Error creating organization template:', error);
+                alert('เกิดข้อผิดพลาดในการสร้าง template');
+            }
+        }
+        
+        function previewOrganizationImport() {
+            console.log('Starting previewOrganizationImport function');
+            const fileInput = document.getElementById('orgExcelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('กรุณาเลือกไฟล์ Excel');
+                return;
+            }
+            
+            console.log('Organization file selected:', file.name, file.type, file.size);
+            
+            // Check if XLSX library is loaded
+            if (typeof XLSX === 'undefined') {
+                alert('ไม่สามารถโหลดไลบรารีสำหรับอ่าน Excel กรุณารีเฟรชหน้า');
+                console.error('XLSX library not loaded');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                console.log('Organization file read successfully');
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    console.log('Data length:', data.length);
+                    
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    console.log('Workbook sheets:', workbook.SheetNames);
+                    
+                    if (workbook.SheetNames.length === 0) {
+                        alert('ไม่พบ sheet ในไฟล์ Excel');
+                        return;
+                    }
+                    
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    console.log('Raw JSON data:', jsonData);
+                    
+                    // Skip header row and process data
+                    const dataRows = jsonData.slice(1).filter(row => {
+                        return row && row.length > 0 && row[0] != null && row[0] !== ''; // At least org ID must exist
+                    });
+                    
+                    console.log('Filtered organization data rows:', dataRows.length);
+                    
+                    if (dataRows.length === 0) {
+                        alert('ไม่พบข้อมูลในไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+                        return;
+                    }
+                    
+                    orgImportData = [];
+                    const errors = [];
+                    const existingOrgIds = new Set(organizations.map(o => o.id));
+                    
+                    console.log('Existing organization IDs:', Array.from(existingOrgIds));
+                    
+                    dataRows.forEach((row, index) => {
+                        const rowNum = index + 2; // +2 because we skipped header and arrays are 0-indexed
+                        console.log(`Processing organization row ${rowNum}:`, row);
+                        
+                        const [orgId, name, phone, fax, email, address] = row;
+                        
+                        // Validation
+                        const rowErrors = [];
+                        
+                        // Convert values to strings and handle empty cells
+                        const cleanOrgId = orgId ? String(orgId).trim() : '';
+                        const cleanName = name ? String(name).trim() : '';
+                        const cleanPhone = phone ? String(phone).trim() : '';
+                        const cleanFax = fax ? String(fax).trim() : '';
+                        const cleanEmail = email ? String(email).trim() : '';
+                        const cleanAddress = address ? String(address).trim() : '';
+                        
+                        if (!cleanOrgId) {
+                            rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงานไม่ถูกต้อง`);
+                        } else {
+                            const upperOrgId = cleanOrgId.toUpperCase();
+                            if (existingOrgIds.has(upperOrgId)) {
+                                rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงาน ${upperOrgId} มีอยู่แล้วในระบบ`);
+                            }
+                        }
+                        
+                        if (!cleanName) {
+                            rowErrors.push(`แถว ${rowNum}: ชื่อหน่วยงานไม่ถูกต้อง`);
+                        }
+                        
+                        if (cleanEmail && !cleanEmail.includes('@')) {
+                            rowErrors.push(`แถว ${rowNum}: รูปแบบอีเมลไม่ถูกต้อง`);
+                        }
+                        
+                        if (rowErrors.length > 0) {
+                            errors.push(...rowErrors);
+                        } else {
+                            orgImportData.push({
+                                id: cleanOrgId.toUpperCase(),
+                                name: cleanName,
+                                phone: cleanPhone,
+                                fax: cleanFax,
+                                email: cleanEmail,
+                                address: cleanAddress,
+                                createdAt: new Date().toISOString()
+                            });
+                        }
+                    });
+                    
+                    console.log('Organization import data created:', orgImportData.length, 'items');
+                    console.log('Errors found:', errors.length);
+                    
+                    // Show preview
+                    console.log('Showing organization preview for', orgImportData.length, 'items');
+                    const previewDiv = document.getElementById('orgImportPreview');
+                    const previewTableBody = document.getElementById('orgPreviewTableBody');
+                    const previewCount = document.getElementById('orgPreviewCount');
+                    
+                    if (!previewDiv || !previewTableBody || !previewCount) {
+                        console.error('Organization preview elements not found');
+                        alert('เกิดข้อผิดพลาดในการแสดงตัวอย่าง');
+                        return;
+                    }
+                    
+                    previewTableBody.innerHTML = '';
+                    orgImportData.forEach((org, index) => {
+                        console.log(`Creating organization preview row ${index + 1}:`, org);
+                        const row = document.createElement('tr');
+                        row.className = 'border-b';
+                        row.innerHTML = `
+                            <td class="px-2 py-1">${org.id}</td>
+                            <td class="px-2 py-1">${org.name}</td>
+                            <td class="px-2 py-1">${org.phone}</td>
+                            <td class="px-2 py-1">${org.fax}</td>
+                            <td class="px-2 py-1">${org.email}</td>
+                            <td class="px-2 py-1">${org.address}</td>
+                        `;
+                        previewTableBody.appendChild(row);
+                    });
+                    
+                    previewCount.textContent = `พบข้อมูลที่ถูกต้อง ${orgImportData.length} รายการ`;
+                    console.log('Making organization preview visible');
+                    previewDiv.classList.remove('hidden');
+                    
+                    // Show errors if any
+                    const errorsDiv = document.getElementById('orgImportErrors');
+                    const errorList = document.getElementById('orgErrorList');
+                    
+                    if (errors.length > 0) {
+                        errorList.innerHTML = '';
+                        errors.forEach(error => {
+                            const li = document.createElement('li');
+                            li.textContent = `• ${error}`;
+                            errorList.appendChild(li);
+                        });
+                        errorsDiv.classList.remove('hidden');
+                    } else {
+                        errorsDiv.classList.add('hidden');
+                    }
+                    
+                    // Enable import button if there's valid data
+                    document.getElementById('orgImportBtn').disabled = orgImportData.length === 0;
+                    
+                } catch (error) {
+                    console.error('Error reading organization Excel file:', error);
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์ Excel: ' + error.message);
+                }
+            };
+            
+            reader.onerror = function(error) {
+                console.error('FileReader error:', error);
+                alert('เกิดข้อผิดพลาดในการอ่านไฟล์');
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        async function importOrganizations() {
+            if (orgImportData.length === 0) {
+                alert('ไม่มีข้อมูลที่จะนำเข้า');
+                return;
+            }
+            
+            if (!confirm(`ต้องการนำเข้าข้อมูลหน่วยงาน ${orgImportData.length} รายการหรือไม่?`)) {
+                return;
+            }
+            
+            try {
+                const importBtn = document.getElementById('orgImportBtn');
+                importBtn.disabled = true;
+                importBtn.textContent = 'กำลังนำเข้า...';
+                
+                let successCount = 0;
+                let failCount = 0;
+                
+                for (const org of orgImportData) {
+                    try {
+                        // Add to local array
+                        organizations.push(org);
+                        
+                        // Save to Firebase
+                        const orgRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'organizations'));
+                        await window.firebaseSet(orgRef, org);
+                        
+                        // Initialize confirmation status for new organization
+                        if (!confirmationStatus[org.id]) {
+                            confirmationStatus[org.id] = { teamConfirmed: false, orgConfirmed: false };
+                        }
+                        
+                        successCount++;
+                    } catch (error) {
+                        console.error(`Error importing organization ${org.id}:`, error);
+                        failCount++;
+                    }
+                }
+                
+                // Save updated confirmation status
+                await saveToFirebase('confirmationStatus', confirmationStatus);
+                
+                await logActivity('นำเข้า', `นำเข้าข้อมูลหน่วยงานจาก Excel: สำเร็จ ${successCount} รายการ${failCount > 0 ? `, ไม่สำเร็จ ${failCount} รายการ` : ''}`);
+                
+                hideModal();
+                loadOrganizationsData(); // Refresh organizations data
+                
+                if (failCount === 0) {
+                    alert(`นำเข้าข้อมูลเรียบร้อย ${successCount} รายการ`);
+                } else {
+                    alert(`นำเข้าข้อมูลเสร็จสิ้น สำเร็จ ${successCount} รายการ ไม่สำเร็จ ${failCount} รายการ`);
+                }
+                
+            } catch (error) {
+                console.error('Error importing organizations:', error);
+                alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
+            }
+        }
+        
         // Other placeholder functions (to be implemented later)
         function showAddYearModal() { alert('ฟีเจอร์เพิ่มปีใหม่ - จะพัฒนาในอนาคต'); }
         function showAddOrgModal() { alert('ฟีเจอร์เพิ่มหน่วยงานใหม่ - จะพัฒนาในอนาคต'); }
