@@ -582,6 +582,8 @@
         
         async function loadDataFromFirebase() {
             try {
+                console.log('Starting to load data from Firebase...');
+                
                 // โหลดข้อมูลทั้งหมดจาก Firebase
                 const [usersSnap, orgsSnap, officersSnap, trainingSnap, activitySnap, confirmSnap] = await Promise.all([
                     window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'users')),
@@ -592,10 +594,11 @@
                     window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'confirmationStatus'))
                 ]);
                 
+                console.log('Firebase snapshots received');
+                
                 // อัพเดต local arrays ด้วยข้อมูลจาก Firebase
                 if (usersSnap.val()) {
                     users.length = 0;
-                    // แปลง Firebase Object เป็น Array
                     const firebaseUsers = usersSnap.val();
                     if (Array.isArray(firebaseUsers)) {
                         users.push(...firebaseUsers);
@@ -606,30 +609,113 @@
                     }
                     console.log('Loaded users from Firebase:', users.length, 'users');
                 }
+                
                 if (orgsSnap.val()) {
                     organizations.length = 0;
-                    organizations.push(...orgsSnap.val());
-                }
-                if (officersSnap.val()) {
-                    officers.length = 0;
-                    officers.push(...officersSnap.val());
-                }
-                if (trainingSnap.val()) {
-                    Object.assign(trainingData, trainingSnap.val());
-                }
-                if (activitySnap.val()) {
-                    activityLog.length = 0;
-                    activityLog.push(...activitySnap.val());
-                }
-                if (confirmSnap.val()) {
-                    Object.assign(confirmationStatus, confirmSnap.val());
+                    const firebaseOrgs = orgsSnap.val();
+                    if (Array.isArray(firebaseOrgs)) {
+                        organizations.push(...firebaseOrgs);
+                    } else {
+                        const orgArray = Object.values(firebaseOrgs);
+                        organizations.push(...orgArray);
+                    }
+                    console.log('Loaded organizations from Firebase:', organizations.length, 'organizations');
                 }
                 
-                console.log('Data loaded from Firebase successfully');
+                if (officersSnap.val()) {
+                    officers.length = 0;
+                    const firebaseOfficers = officersSnap.val();
+                    if (Array.isArray(firebaseOfficers)) {
+                        officers.push(...firebaseOfficers);
+                    } else {
+                        const officerArray = Object.values(firebaseOfficers);
+                        officers.push(...officerArray);
+                    }
+                    console.log('Loaded officers from Firebase:', officers.length, 'officers');
+                }
+                
+                if (trainingSnap.val()) {
+                    // ล้าง trainingData แล้วเอาใหม่
+                    Object.keys(trainingData).forEach(key => delete trainingData[key]);
+                    Object.assign(trainingData, trainingSnap.val());
+                    console.log('Loaded training data from Firebase');
+                }
+                
+                if (activitySnap.val()) {
+                    activityLog.length = 0;
+                    const firebaseActivity = activitySnap.val();
+                    if (Array.isArray(firebaseActivity)) {
+                        activityLog.push(...firebaseActivity);
+                    } else {
+                        const activityArray = Object.values(firebaseActivity);
+                        activityLog.push(...activityArray);
+                    }
+                    console.log('Loaded activity log from Firebase:', activityLog.length, 'entries');
+                }
+                
+                if (confirmSnap.val()) {
+                    // ล้าง confirmationStatus แล้วเอาใหม่
+                    Object.keys(confirmationStatus).forEach(key => delete confirmationStatus[key]);
+                    Object.assign(confirmationStatus, confirmSnap.val());
+                    console.log('Loaded confirmation status from Firebase');
+                }
+                
+                console.log('All data loaded from Firebase successfully');
+                console.log('Final data counts:', {
+                    users: users.length,
+                    organizations: organizations.length,
+                    officers: officers.length,
+                    trainingData: Object.keys(trainingData).length,
+                    activityLog: activityLog.length,
+                    confirmationStatus: Object.keys(confirmationStatus).length
+                });
                 
             } catch (error) {
                 console.error('Error loading data from Firebase:', error);
+                throw error;
             }
+        }
+        
+        // ฟังก์ชันรีเฟรชข้อมูลทั้งหมด
+        async function refreshAllData() {
+            console.log('Refreshing all UI data...');
+            try {
+                // รีเฟรช dropdown ต่างๆ
+                populateOrganizationDropdowns();
+                
+                // จะรีเฟรชข้อมูลเมื่อมีการเรียก tab ที่เกี่ยวข้อง
+                console.log('Data refresh completed');
+            } catch (error) {
+                console.error('Error refreshing data:', error);
+            }
+        }
+        
+        // ฟังก์ชันใส่ข้อมูลหน่วยงานใน dropdown ต่างๆ
+        function populateOrganizationDropdowns() {
+            const selectors = [
+                '#officerOrgFilter',
+                '#regOrgId'
+            ];
+            
+            selectors.forEach(selector => {
+                const element = document.querySelector(selector);
+                if (element) {
+                    // เก็บ option แรกไว้
+                    const firstOption = element.querySelector('option:first-child');
+                    element.innerHTML = '';
+                    if (firstOption) {
+                        element.appendChild(firstOption);
+                    }
+                    
+                    // เพิ่ม option ใหม่
+                    organizations.forEach(org => {
+                        const option = document.createElement('option');
+                        option.value = org.id;
+                        option.textContent = org.name;
+                        element.appendChild(option);
+                    });
+                }
+            });
         }
         
         async function saveToFirebase(path, data) {
@@ -818,7 +904,13 @@
             
             try {
                 // โหลดข้อมูลผู้ใช้ล่าสุดจาก Firebase
+                console.log('Loading data from Firebase...');
                 await loadDataFromFirebase();
+                console.log('Data loaded. Current data:', {
+                    users: users.length,
+                    organizations: organizations.length,
+                    officers: officers.length
+                });
                 
                 const user = users.find(u => u.username === username && u.password === password);
                 
@@ -829,6 +921,10 @@
                     document.getElementById('mainApp').classList.remove('hidden');
                     document.getElementById('currentUser').textContent = user.name;
                     setupNavigation();
+                    
+                    // รีเฟรชข้อมูลทั้งหมดก่อนแสดง
+                    await refreshAllData();
+                    
                     showDefaultTab();
                     await logActivity('เข้าสู่ระบบ', 'เข้าสู่ระบบสำเร็จ');
                 } else {
@@ -878,6 +974,8 @@
 
         // Show tab functionality
         function showTab(tabId) {
+            console.log('Switching to tab:', tabId);
+            
             // Hide all tabs
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.add('hidden');
@@ -889,10 +987,26 @@
             });
             
             // Show selected tab
-            document.getElementById(tabId).classList.remove('hidden');
+            const targetTab = document.getElementById(tabId);
+            if (targetTab) {
+                targetTab.classList.remove('hidden');
+            } else {
+                console.error('Tab not found:', tabId);
+                return;
+            }
             
-            // Add active class to clicked nav tab
-            event.target.classList.add('bg-medium-green');
+            // Add active class to clicked nav tab (if event exists)
+            if (typeof event !== 'undefined' && event.target) {
+                event.target.classList.add('bg-medium-green');
+            } else {
+                // Find and activate the correct nav tab
+                const navButtons = document.querySelectorAll('.nav-tab');
+                navButtons.forEach(button => {
+                    if (button.onclick && button.onclick.toString().includes(tabId)) {
+                        button.classList.add('bg-medium-green');
+                    }
+                });
+            }
             
             // Load data for the tab
             loadTabData(tabId);
@@ -900,6 +1014,7 @@
 
         // Show default tab based on user role
         function showDefaultTab() {
+            console.log('Showing default tab for role:', userRole);
             if (userRole === 'officer') {
                 showTab('officerDashboard');
             } else if (userRole === 'admin') {
@@ -909,6 +1024,7 @@
 
         // Load data for specific tabs
         function loadTabData(tabId) {
+            console.log('Loading data for tab:', tabId);
             switch(tabId) {
                 case 'summaryReport':
                     loadSummaryReportData();
@@ -939,15 +1055,43 @@
 
         // Load summary report data
         function loadSummaryReportData() {
+            console.log('Loading summary report data...');
+            console.log('Organizations:', organizations.length);
+            console.log('Officers:', officers.length);
+            
             // ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร
             const totalTeams = organizations.length;
             const totalOfficers = officers.length;
             
-            document.getElementById('totalTeams').textContent = totalTeams;
-            document.getElementById('totalOfficers').textContent = totalOfficers;
+            const totalTeamsElement = document.getElementById('totalTeams');
+            const totalOfficersElement = document.getElementById('totalOfficers');
+            
+            if (totalTeamsElement) {
+                totalTeamsElement.textContent = totalTeams;
+            } else {
+                console.error('totalTeams element not found');
+            }
+            
+            if (totalOfficersElement) {
+                totalOfficersElement.textContent = totalOfficers;
+            } else {
+                console.error('totalOfficers element not found');
+            }
             
             // ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน
             const tbody = document.getElementById('orgSummaryTableBody');
+            if (!tbody) {
+                console.error('orgSummaryTableBody element not found');
+                return;
+            }
+            
+            console.log('Populating summary table with', organizations.length, 'organizations');
+            
+            if (organizations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลหน่วยงาน</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = organizations.map(org => {
                 const orgOfficers = officers.filter(officer => officer.orgId === org.id);
                 const totalMembers = orgOfficers.length;
@@ -1147,7 +1291,20 @@
 
         // Load all officers data
         function loadAllOfficersData() {
+            console.log('Loading all officers data...');
             const tbody = document.getElementById('allOfficersTableBody');
+            if (!tbody) {
+                console.error('allOfficersTableBody element not found');
+                return;
+            }
+            
+            console.log('Found', officers.length, 'officers to display');
+            
+            if (officers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลเจ้าหน้าที่</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = officers.map(officer => {
                 const org = organizations.find(o => o.id === officer.orgId);
                 const confirmStatus = confirmationStatus[officer.orgId];
@@ -1203,7 +1360,20 @@
 
         // Load organizations data
         function loadOrganizationsData() {
+            console.log('Loading organizations data...');
             const tbody = document.getElementById('organizationsTableBody');
+            if (!tbody) {
+                console.error('organizationsTableBody element not found');
+                return;
+            }
+            
+            console.log('Found', organizations.length, 'organizations to display');
+            
+            if (organizations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลหน่วยงาน</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = organizations.map(org => {
                 const confirmStatus = confirmationStatus[org.id];
                 let statusDisplay = '';
@@ -1238,7 +1408,20 @@
 
         // Load user accounts data
         function loadUserAccountsData() {
+            console.log('Loading user accounts data...');
             const tbody = document.getElementById('userAccountsTableBody');
+            if (!tbody) {
+                console.error('userAccountsTableBody element not found');
+                return;
+            }
+            
+            console.log('Found', users.length, 'users to display');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+                return;
+            }
+            
             tbody.innerHTML = users.map(user => {
                 const org = organizations.find(o => o.id === user.orgId);
                 return `
