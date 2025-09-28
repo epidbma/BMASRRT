@@ -2818,7 +2818,126 @@
         // Other placeholder functions (to be implemented later)
         function showAddYearModal() { alert('ฟีเจอร์เพิ่มปีใหม่ - จะพัฒนาในอนาคต'); }
         function showAddOrgModal() { alert('ฟีเจอร์เพิ่มหน่วยงานใหม่ - จะพัฒนาในอนาคต'); }
-        function showAddUserModal() { alert('ฟีเจอร์เพิ่มบัญชีใหม่ - จะพัฒนาในอนาคต'); }
+        function showAddUserModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">เพิ่มบัญชีผู้ใช้งานใหม่</h3>
+                <form id="addUserForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อผู้ใช้งาน</label>
+                            <input type="text" id="addUserUsername" placeholder="เช่น admin01, officer001" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                            <p class="text-xs text-gray-500 mt-1">ชื่อผู้ใช้งานจะใช้สำหรับเข้าสู่ระบบ</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
+                            <input type="text" id="addUserName" placeholder="เช่น นายสมชาย ใจดี" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">รหัสผ่าน</label>
+                            <input type="password" id="addUserPassword" placeholder="อย่างน้อย 6 ตัวอักษร" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ยืนยันรหัสผ่าน</label>
+                            <input type="password" id="addUserConfirmPassword" placeholder="กรอกรหัสผ่านอีกครั้ง" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">สิทธิ์การใช้งาน</label>
+                            <select id="addUserRole" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                                <option value="">เลือกสิทธิ์การใช้งาน</option>
+                                <option value="officer">เจ้าหน้าที่</option>
+                                <option value="admin">ผู้ดูแลระบบ</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">หน่วยงาน</label>
+                            <select id="addUserOrgId" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                                <option value="">เลือกหน่วยงาน</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-2 mt-6">
+                        <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">เพิ่มบัญชี</button>
+                    </div>
+                </form>
+            `;
+            showModal(content);
+            
+            // Populate organization dropdown
+            const orgSelect = document.getElementById('addUserOrgId');
+            organizations.forEach(org => {
+                const option = document.createElement('option');
+                option.value = org.id;
+                option.textContent = org.name;
+                orgSelect.appendChild(option);
+            });
+            
+            document.getElementById('addUserForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                await addNewUser();
+            });
+        }
+        
+        async function addNewUser() {
+            try {
+                const username = document.getElementById('addUserUsername').value.trim();
+                const name = document.getElementById('addUserName').value.trim();
+                const password = document.getElementById('addUserPassword').value;
+                const confirmPassword = document.getElementById('addUserConfirmPassword').value;
+                const role = document.getElementById('addUserRole').value;
+                const orgId = document.getElementById('addUserOrgId').value;
+                
+                // Validation
+                if (!username || !name || !password || !confirmPassword || !role || !orgId) {
+                    alert('กรุณากรอกข้อมูลให้ครบถ้วน');
+                    return;
+                }
+                
+                if (password.length < 6) {
+                    alert('รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร');
+                    return;
+                }
+                
+                if (password !== confirmPassword) {
+                    alert('รหัสผ่านและการยืนยันรหัสผ่านไม่ตรงกัน');
+                    return;
+                }
+                
+                // Check if username already exists
+                const existingUser = users.find(u => u.username === username);
+                if (existingUser) {
+                    alert('ชื่อผู้ใช้งานนี้มีอยู่แล้วในระบบ');
+                    return;
+                }
+                
+                const newUser = {
+                    username: username,
+                    name: name,
+                    password: password,
+                    role: role,
+                    orgId: orgId,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to local array
+                users.push(newUser);
+                
+                // Save to Firebase
+                const userRef = window.firebasePush(window.firebaseRef(window.firebaseDatabase, 'users'));
+                await window.firebaseSet(userRef, newUser);
+                
+                const org = organizations.find(o => o.id === orgId);
+                await logActivity('เพิ่ม', `เพิ่มบัญชีผู้ใช้งานใหม่: ${name} (${username}) - ${role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'} - ${org ? org.name : orgId}`);
+                
+                hideModal();
+                loadUserAccountsData(); // Refresh user accounts data
+                alert('เพิ่มบัญชีผู้ใช้งานเรียบร้อยแล้ว');
+                
+            } catch (error) {
+                console.error('Error adding user:', error);
+                alert('เกิดข้อผิดพลาดในการเพิ่มบัญชีผู้ใช้งาน');
+            }
+        }
         // Edit and Delete functions
         function editMember(id) {
             const officer = officers.find(o => o.id === id);
