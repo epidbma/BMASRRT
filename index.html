@@ -467,25 +467,59 @@
                     <!-- ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร -->
                     <div class="bg-white rounded-lg shadow-lg p-6">
                         <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 1: ภาพรวมทีม SRRT กรุงเทพมหานคร</h2>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-blue-100 text-sm">จำนวนทีม</p>
-                                        <p class="text-3xl font-bold" id="totalTeams">-</p>
-                                        <p class="text-blue-100 text-sm">ทีม</p>
-                                    </div>
-                                    <div class="text-4xl opacity-80">🏢</div>
+                        <!-- บล็อก 1: จำนวนทีม -->
+                        <div class="grid grid-cols-1 gap-4 mb-6">
+                            <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                                <div class="text-center">
+                                    <p class="text-blue-100 text-xs font-medium uppercase tracking-wide">จำนวนทีม</p>
+                                    <p class="text-3xl font-bold mt-2 mb-1" id="totalTeams">-</p>
+                                    <p class="text-blue-200 text-sm">ทีม</p>
                                 </div>
                             </div>
-                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-                                <div class="flex items-center justify-between">
-                                    <div>
-                                        <p class="text-green-100 text-sm">จำนวนเจ้าหน้าที่ในปัจจุบัน</p>
-                                        <p class="text-3xl font-bold" id="totalOfficers">-</p>
-                                        <p class="text-green-100 text-sm">คน</p>
+                        </div>
+                        
+                        <!-- บล็อก 2: ข้อมูลเจ้าหน้าที่ทั้งหมด -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div class="bg-gradient-to-r from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                                <div class="text-center">
+                                    <p class="text-green-100 text-xs font-medium uppercase tracking-wide">เจ้าหน้าที่ทั้งหมด</p>
+                                    <p class="text-3xl font-bold mt-2 mb-1" id="totalOfficers">-</p>
+                                    <p class="text-green-200 text-sm">คน</p>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-r from-emerald-500 to-emerald-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                                <div class="text-center">
+                                    <p class="text-emerald-100 text-xs font-medium uppercase tracking-wide">ผ่านการอบรม</p>
+                                    <div class="mt-2 mb-1">
+                                        <p class="text-3xl font-bold" id="totalTrainedOfficers">-</p>
+                                        <div class="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-white bg-opacity-20 rounded-full">
+                                            <p class="text-sm font-semibold" id="totalTrainedPercentage">-%</p>
+                                        </div>
                                     </div>
-                                    <div class="text-4xl opacity-80">👥</div>
+                                    <p class="text-emerald-200 text-sm">คน</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- บล็อก 3: ข้อมูลทีม SRRT -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div class="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                                <div class="text-center">
+                                    <p class="text-purple-100 text-xs font-medium uppercase tracking-wide">ทีม SRRT</p>
+                                    <p class="text-3xl font-bold mt-2 mb-1" id="totalSrrtMembers">-</p>
+                                    <p class="text-purple-200 text-sm">คน</p>
+                                </div>
+                            </div>
+                            <div class="bg-gradient-to-r from-indigo-500 to-indigo-600 text-white p-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 hover:-translate-y-0.5">
+                                <div class="text-center">
+                                    <p class="text-indigo-100 text-xs font-medium uppercase tracking-wide">SRRT ผ่านอบรม</p>
+                                    <div class="mt-2 mb-1">
+                                        <p class="text-3xl font-bold" id="trainedSrrtMembers">-</p>
+                                        <div class="inline-flex items-center justify-center mt-1 px-2 py-0.5 bg-white bg-opacity-20 rounded-full">
+                                            <p class="text-sm font-semibold" id="trainedSrrtPercentage">-%</p>
+                                        </div>
+                                    </div>
+                                    <p class="text-indigo-200 text-sm">คน</p>
                                 </div>
                             </div>
                         </div>
@@ -499,21 +533,41 @@
                         </div>
                     </div>
 
-                    <!-- ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน -->
+                    <!-- ส่วนที่ 2: ข้อมูลเจ้าหน้าที่แต่ละหน่วยงาน -->
                     <div class="bg-white rounded-lg shadow-lg p-6">
-                        <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 2: ข้อมูลแต่ละหน่วยงาน</h2>
+                        <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 2: ข้อมูลเจ้าหน้าที่แต่ละหน่วยงาน</h2>
                         <div class="overflow-x-auto">
                             <table class="min-w-full bg-white border border-gray-200">
                                 <thead class="bg-medium-green text-white">
                                     <tr>
                                         <th class="px-4 py-2 text-left">หน่วยงาน</th>
-                                        <th class="px-4 py-2 text-center">จำนวนสมาชิกในทีม</th>
+                                        <th class="px-4 py-2 text-center">จำนวนเจ้าหน้าที่</th>
                                         <th class="px-4 py-2 text-center">ผ่านการอบรมแล้ว</th>
                                         <th class="px-4 py-2 text-center">เปอร์เซ็นต์ที่ผ่านการอบรม</th>
                                     </tr>
                                 </thead>
                                 <tbody id="orgSummaryTableBody">
                                     <!-- Organization summary will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- ส่วนที่ 3: ข้อมูลทีม SRRT แต่ละหน่วยงาน -->
+                    <div class="bg-white rounded-lg shadow-lg p-6">
+                        <h2 class="text-xl font-bold text-dark-green mb-6">ส่วนที่ 3: ข้อมูลทีม SRRT แต่ละหน่วยงาน</h2>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full bg-white border border-gray-200">
+                                <thead class="bg-blue-600 text-white">
+                                    <tr>
+                                        <th class="px-4 py-2 text-left">หน่วยงาน</th>
+                                        <th class="px-4 py-2 text-center">จำนวนทีม SRRT</th>
+                                        <th class="px-4 py-2 text-center">ผ่านการอบรมแล้ว</th>
+                                        <th class="px-4 py-2 text-center">เปอร์เซ็นต์ที่ผ่านการอบรม</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="srrtSummaryTableBody">
+                                    <!-- SRRT team summary will be populated here -->
                                 </tbody>
                             </table>
                         </div>
@@ -1541,24 +1595,102 @@
             const totalTeams = organizations.length;
             const totalOfficers = officers.length;
             
+            // นับสมาชิกทีม SRRT
+            const srrtMembers = officers.filter(officer => officer.isSRRT === true);
+            const totalSrrtMembers = srrtMembers.length;
+            
+            // นับเจ้าหน้าที่ที่ผ่านการอบรม (ทั้งหมด)
+            let totalTrainedOfficers = 0;
+            officers.forEach(officer => {
+                const training = trainingData[officer.id];
+                if (training) {
+                    const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
+                    if (hasTraining) {
+                        totalTrainedOfficers++;
+                    }
+                }
+            });
+            
+            // นับสมาชิกทีม SRRT ที่ผ่านการอบรม
+            let trainedSrrtMembers = 0;
+            srrtMembers.forEach(officer => {
+                const training = trainingData[officer.id];
+                if (training) {
+                    const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
+                    if (hasTraining) {
+                        trainedSrrtMembers++;
+                    }
+                }
+            });
+            
+            // คำนวณเปอร์เซ็นต์
+            const totalTrainedPercentage = totalOfficers > 0 ? Math.round((totalTrainedOfficers / totalOfficers) * 100) : 0;
+            const trainedSrrtPercentage = totalSrrtMembers > 0 ? Math.round((trainedSrrtMembers / totalSrrtMembers) * 100) : 0;
+            
             console.log('🔢 Setting totalTeams to:', totalTeams);
             console.log('🔢 Setting totalOfficers to:', totalOfficers);
+            console.log('🔢 Setting totalSrrtMembers to:', totalSrrtMembers);
+            console.log('🔢 Setting totalTrainedOfficers to:', totalTrainedOfficers, `(${totalTrainedPercentage}%)`);
+            console.log('🔢 Setting trainedSrrtMembers to:', trainedSrrtMembers, `(${trainedSrrtPercentage}%)`);
             
-            const totalTeamsElement = document.getElementById('totalTeams');
-            const totalOfficersElement = document.getElementById('totalOfficers');
+            // อัปเดต UI elements
+            const elements = {
+                totalTeams: document.getElementById('totalTeams'),
+                totalOfficers: document.getElementById('totalOfficers'),
+                totalSrrtMembers: document.getElementById('totalSrrtMembers'),
+                totalTrainedOfficers: document.getElementById('totalTrainedOfficers'),
+                totalTrainedPercentage: document.getElementById('totalTrainedPercentage'),
+                trainedSrrtMembers: document.getElementById('trainedSrrtMembers'),
+                trainedSrrtPercentage: document.getElementById('trainedSrrtPercentage')
+            };
             
-            if (totalTeamsElement) {
-                totalTeamsElement.textContent = totalTeams;
+            if (elements.totalTeams) {
+                elements.totalTeams.textContent = totalTeams;
                 console.log('✅ totalTeams updated successfully');
             } else {
                 console.error('❌ totalTeams element not found');
             }
             
-            if (totalOfficersElement) {
-                totalOfficersElement.textContent = totalOfficers;
+            if (elements.totalOfficers) {
+                elements.totalOfficers.textContent = totalOfficers;
                 console.log('✅ totalOfficers updated successfully');
             } else {
                 console.error('❌ totalOfficers element not found');
+            }
+            
+            if (elements.totalSrrtMembers) {
+                elements.totalSrrtMembers.textContent = totalSrrtMembers;
+                console.log('✅ totalSrrtMembers updated successfully');
+            } else {
+                console.error('❌ totalSrrtMembers element not found');
+            }
+            
+            if (elements.totalTrainedOfficers) {
+                elements.totalTrainedOfficers.textContent = totalTrainedOfficers;
+                console.log('✅ totalTrainedOfficers updated successfully');
+            } else {
+                console.error('❌ totalTrainedOfficers element not found');
+            }
+            
+            if (elements.totalTrainedPercentage) {
+                elements.totalTrainedPercentage.textContent = `${totalTrainedPercentage}%`;
+                console.log('✅ totalTrainedPercentage updated successfully');
+            } else {
+                console.error('❌ totalTrainedPercentage element not found');
+            }
+            
+            if (elements.trainedSrrtMembers) {
+                elements.trainedSrrtMembers.textContent = trainedSrrtMembers;
+                console.log('✅ trainedSrrtMembers updated successfully');
+            } else {
+                console.error('❌ trainedSrrtMembers element not found');
+            }
+            
+            if (elements.trainedSrrtPercentage) {
+                elements.trainedSrrtPercentage.textContent = `${trainedSrrtPercentage}%`;
+                console.log('✅ trainedSrrtPercentage updated successfully');
+            } else {
+                console.error('❌ trainedSrrtPercentage element not found');
             }
             
             // อัปเดตสรุปตำแหน่ง
@@ -1605,6 +1737,61 @@
                             <div class="flex items-center justify-center">
                                 <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
                                     <div class="bg-green-500 h-2 rounded-full" style="width: ${trainingPercentage}%"></div>
+                                </div>
+                                <span class="text-sm font-medium">${trainingPercentage}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // ส่วนที่ 3: ข้อมูลทีม SRRT แต่ละหน่วยงาน
+            updateSrrtSummaryTable();
+        }
+        
+        // อัปเดตตารางข้อมูลทีม SRRT แต่ละหน่วยงาน
+        function updateSrrtSummaryTable() {
+            const tbody = document.getElementById('srrtSummaryTableBody');
+            if (!tbody) {
+                console.error('❌ srrtSummaryTableBody element not found');
+                return;
+            }
+            
+            console.log('📊 Populating SRRT summary table with', organizations.length, 'organizations');
+            
+            if (organizations.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลหน่วยงาน</td></tr>';
+                return;
+            }
+            
+            tbody.innerHTML = organizations.map(org => {
+                // กรองเฉพาะเจ้าหน้าที่ SRRT ในหน่วยงานนี้
+                const srrtOfficers = officers.filter(officer => officer.orgId === org.id && officer.isSRRT);
+                const totalSrrtMembers = srrtOfficers.length;
+                
+                // นับจำนวนสมาชิก SRRT ที่ผ่านการอบรม (มีการอบรมอย่างน้อย 1 หลักสูตรในปีใดปีหนึ่ง)
+                let trainedSrrtMembers = 0;
+                srrtOfficers.forEach(officer => {
+                    const training = trainingData[officer.id];
+                    if (training) {
+                        const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
+                        if (hasTraining) {
+                            trainedSrrtMembers++;
+                        }
+                    }
+                });
+                
+                const trainingPercentage = totalSrrtMembers > 0 ? Math.round((trainedSrrtMembers / totalSrrtMembers) * 100) : 0;
+                
+                return `
+                    <tr class="border-b hover:bg-blue-50">
+                        <td class="px-4 py-2">${org.name}</td>
+                        <td class="px-4 py-2 text-center">${totalSrrtMembers}</td>
+                        <td class="px-4 py-2 text-center">${trainedSrrtMembers}</td>
+                        <td class="px-4 py-2 text-center">
+                            <div class="flex items-center justify-center">
+                                <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                    <div class="bg-blue-500 h-2 rounded-full" style="width: ${trainingPercentage}%"></div>
                                 </div>
                                 <span class="text-sm font-medium">${trainingPercentage}%</span>
                             </div>
