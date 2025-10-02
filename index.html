@@ -1865,6 +1865,10 @@
                 const position = positions.find(p => p.id === officer.position_id);
                 const positionName = position ? position.name : 'ไม่ระบุ';
                 
+                // ตรวจสอบว่ามีประวัติการอบรมหรือไม่
+                const training = trainingData[officer.id] || {};
+                const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
+                
                 return `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="px-4 py-2">${officer.id}</td>
@@ -1873,7 +1877,10 @@
                     <td class="px-4 py-2">${officer.phone}</td>
                     <td class="px-4 py-2">${officer.email}</td>
                     <td class="px-4 py-2 text-center">
-                        <button onclick="showOfficerTrainingHistory('${officer.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">ข้อมูลการอบรม</button>
+                        ${hasTraining ? 
+                            `<button onclick="showOfficerTrainingHistory('${officer.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">ดู</button>` :
+                            `<button disabled class="bg-gray-400 text-white px-2 py-1 rounded text-sm cursor-not-allowed" title="ไม่มีประวัติการอบรม">ดู</button>`
+                        }
                     </td>
                     <td class="px-4 py-2 text-center">
                         <input type="checkbox" 
@@ -1954,6 +1961,10 @@
                 const position = positions.find(p => p.id === officer.position_id);
                 const positionName = position ? position.name : 'ไม่ระบุ';
                 
+                // ตรวจสอบว่ามีประวัติการอบรมหรือไม่
+                const training = trainingData[officer.id] || {};
+                const hasTraining = Object.values(training).some(courses => courses && courses.length > 0);
+                
                 return `
                 <tr class="border-b hover:bg-gray-50">
                     <td class="px-4 py-2">${officer.id}</td>
@@ -1962,7 +1973,10 @@
                     <td class="px-4 py-2">${officer.phone}</td>
                     <td class="px-4 py-2">${officer.email}</td>
                     <td class="px-4 py-2 text-center">
-                        <button onclick="showOfficerTrainingHistory('${officer.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">ข้อมูลการอบรม</button>
+                        ${hasTraining ? 
+                            `<button onclick="showOfficerTrainingHistory('${officer.id}')" class="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600">ดู</button>` :
+                            `<button disabled class="bg-gray-400 text-white px-2 py-1 rounded text-sm cursor-not-allowed" title="ไม่มีประวัติการอบรม">ดู</button>`
+                        }
                     </td>
                 </tr>
                 `;
@@ -3624,17 +3638,30 @@
         
         // Modal functions for adding new records
         function showAddMemberModal() {
+            // หาชื่อหน่วยงานของผู้ใช้ปัจจุบัน
+            const userOrg = organizations.find(o => o.id === currentUser.orgId);
+            const userOrgName = userOrg ? userOrg.name : 'ไม่ระบุ';
+            
             const content = `
                 <h3 class="text-lg font-bold text-dark-green mb-4">เพิ่มสมาชิกใหม่ในทีม</h3>
                 <form id="addMemberForm">
                     <div class="space-y-4">
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">รหัสเจ้าหน้าที่</label>
-                            <input type="text" id="memberOfficerId" placeholder="เช่น OFF001" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                            <div class="px-3 py-2 border border-gray-300 rounded bg-gray-50">
+                                <span class="text-gray-600 text-sm">รหัสจะถูกสร้างอัตโนมัติ: </span>
+                                <span class="font-semibold text-blue-600" id="nextMemberOfficerId">${generateOfficerId()}</span>
+                            </div>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อ-นามสกุล</label>
                             <input type="text" id="memberName" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">ตำแหน่ง</label>
+                            <select id="memberPositionId" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
+                                <option value="">เลือกตำแหน่ง</option>
+                            </select>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-gray-700 mb-2">เบอร์โทรศัพท์</label>
@@ -3644,14 +3671,34 @@
                             <label class="block text-sm font-medium text-gray-700 mb-2">อีเมล</label>
                             <input type="email" id="memberEmail" placeholder="example@bma.go.th" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" required>
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">หน่วยงาน</label>
+                            <div class="px-3 py-2 border border-gray-300 rounded bg-gray-50">
+                                <span class="font-medium text-gray-700">${userOrgName}</span>
+                                <span class="text-gray-500 text-sm ml-2">(หน่วยงานของคุณ)</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="flex justify-end space-x-2 mt-6">
                         <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
-                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">เพิ่ลสมาชิก</button>
+                        <button type="submit" class="px-4 py-2 bg-medium-green text-white rounded hover:bg-dark-green">เพิ่มสมาชิก</button>
                     </div>
                 </form>
             `;
             showModal(content);
+            
+            // Populate position dropdown
+            const positionSelect = document.getElementById('memberPositionId');
+            if (positions && Array.isArray(positions)) {
+                positions.forEach(pos => {
+                    if (pos && pos.id && pos.name) {
+                        const option = document.createElement('option');
+                        option.value = pos.id;
+                        option.textContent = pos.name;
+                        positionSelect.appendChild(option);
+                    }
+                });
+            }
             
             // Add form submit handler
             document.getElementById('addMemberForm').addEventListener('submit', async function(e) {
@@ -3662,30 +3709,30 @@
         
         async function addNewMember() {
             try {
-                const officerId = document.getElementById('memberOfficerId').value.trim().toUpperCase();
+                // สร้างรหัสเจ้าหน้าที่อัตโนมัติ
+                const officerId = generateOfficerId();
                 const name = document.getElementById('memberName').value.trim();
+                const positionId = document.getElementById('memberPositionId').value;
                 const phone = document.getElementById('memberPhone').value.trim();
                 const email = document.getElementById('memberEmail').value.trim();
                 
                 // Validation
-                if (!officerId || !name || !phone || !email) {
+                if (!name || !positionId || !phone || !email) {
                     alert('กรุณากรอกข้อมูลให้ครบถ้วน');
                     return;
                 }
                 
-                // Check if officer ID already exists
-                const existingOfficer = officers.find(o => o.id === officerId);
-                if (existingOfficer) {
-                    alert('รหัสเจ้าหน้าที่นี้มีอยู่แล้ว');
-                    return;
-                }
+                // หาชื่อหน่วยงานของผู้ใช้ปัจจุบัน
+                const userOrg = organizations.find(org => org.id === currentUser.orgId);
                 
                 const newOfficer = {
                     id: officerId,
                     name: name,
+                    position_id: positionId,
                     phone: phone,
                     email: email,
                     orgId: currentUser.orgId,
+                    organization: userOrg ? userOrg.name : 'ไม่ระบุ',
                     createdAt: new Date().toISOString()
                 };
                 
@@ -3702,11 +3749,12 @@
                     await saveToFirebase('trainingData', trainingData);
                 }
                 
-                await logActivity('เพิ่ม', `เพิ่มสมาชิกใหม่: ${name} (${officerId})`);
+                await logActivity('เพิ่ม', `เพิ่มเจ้าหน้าที่ใหม่: ${name} (${officerId})`);
                 
                 hideModal();
-                loadTeamData(); // Refresh team data
-                alert('เพิ่มสมาชิกใหม่เรียบร้อยแล้ว');
+                loadTeamData(); // Refresh team data  
+                loadAllOfficersData(); // Refresh all officers data in case admin is viewing
+                alert('เพิ่มเจ้าหน้าที่ใหม่เรียบร้อยแล้ว');
                 
             } catch (error) {
                 console.error('Error adding member:', error);
