@@ -3266,10 +3266,6 @@
                     <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อตามคำสั่ง</label>
                     <input type="text" id="officialName" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" placeholder="ชื่อ-นามสกุลตามคำสั่ง" value="${courses.length > 0 && typeof courses[0] === 'object' && courses[0].officialName ? courses[0].officialName : (officer ? officer.name : '')}">
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">ชื่อตามคำสั่ง</label>
-                    <input type="text" id="officialName" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green" placeholder="ชื่อ-นามสกุลตามคำสั่ง" value="${courses.length > 0 && typeof courses[0] === 'object' && courses[0].officialName ? courses[0].officialName : (officer ? officer.name : '')}">
-                </div>
                 ${formattedCourses.length > 0 && formattedCourses.some(c => c.includes('ก่อนจะเปลี่ยนเป็นแบบปัจจุบัน')) ? 
                     `<div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                         <p class="text-sm text-yellow-800"><strong>หมายเหตุ:</strong> หลักสูตรที่แสดงข้างต้นใช้ชื่อ-นามสกุล ณ เวลาที่บันทึกการอบรม</p>
