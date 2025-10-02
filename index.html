@@ -1855,8 +1855,20 @@
             document.getElementById('teamProgressText').textContent = `${trainedMembers}/${totalMembers} คน`;
             document.getElementById('teamProgressBar').style.width = `${trainingPercentage}%`;
             
-            // Update confirmation status display
-            updateConfirmationStatusDisplay();
+            // Update organization info display
+            if (org) {
+                document.getElementById('viewOrgName').textContent = org.name || 'ไม่ระบุ';
+                document.getElementById('viewOrgPhone').textContent = org.phone || 'ไม่ระบุ';
+                document.getElementById('viewOrgFax').textContent = org.fax || 'ไม่ระบุ';
+                document.getElementById('viewOrgEmail').textContent = org.email || 'ไม่ระบุ';
+                
+                // Update edit mode displays too
+                document.getElementById('editViewOrgId').textContent = org.id || 'ไม่ระบุ';
+                document.getElementById('editViewOrgName').textContent = org.name || 'ไม่ระบุ';
+                document.getElementById('editPhone').value = org.phone || '';
+                document.getElementById('editFax').value = org.fax || '';
+                document.getElementById('editEmail').value = org.email || '';
+            }
             
             // Update confirmation status display
             updateConfirmationStatusDisplay();
@@ -5789,6 +5801,11 @@
                     loadAllOfficersData();
                 }
 
+                // ตรวจสอบ pending notifications อีกครั้งเพื่อแสดง popup ตัวถัดไป (หากมี)
+                setTimeout(() => {
+                    checkPendingTransferNotifications();
+                }, 1000); // รอ 1 วินาทีให้ modal ปัจจุบันปิดก่อน
+
             } catch (error) {
                 console.error('Error processing transfer confirmation:', error);
                 alert('เกิดข้อผิดพลาดในการประมวลผลการย้าย');
@@ -5798,6 +5815,7 @@
         // Check for pending transfer notifications on page load
         async function checkPendingTransferNotifications() {
             try {
+                console.log('🔍 Checking for pending transfer notifications...');
                 const notificationsSnap = await window.firebaseGet(window.firebaseRef(window.firebaseDatabase, 'transferNotifications'));
                 if (notificationsSnap.val()) {
                     const notifications = notificationsSnap.val();
@@ -5805,9 +5823,16 @@
                         n.status === 'pending' && n.toOrgId === currentUser.orgId
                     );
 
-                    // แสดง popup สำหรับการแจ้งเตือนที่รอดำเนินการ
-                    for (const notification of pendingNotifications) {
-                        await showTransferConfirmationPopup(notification);
+                    console.log(`📋 Found ${pendingNotifications.length} pending notifications for this organization`);
+
+                    // แสดง popup สำหรับการแจ้งเตือนที่รอดำเนินการ (ทีละตัว)
+                    if (pendingNotifications.length > 0) {
+                        // แสดงเฉพาะตัวแรกเท่านั้น ตัวถัดไปจะแสดงหลังจากจัดการตัวแรกเสร็จ
+                        const firstNotification = pendingNotifications[0];
+                        console.log('🔔 Showing popup for:', firstNotification.officerName);
+                        await showTransferConfirmationPopup(firstNotification);
+                    } else {
+                        console.log('✅ No pending transfer notifications found');
                     }
                 }
             } catch (error) {
