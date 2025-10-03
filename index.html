@@ -5327,6 +5327,8 @@
         }
         
         // Training Data Import Functions
+        let trainingImportData = []; // เก็บข้อมูลการอบรมที่จะนำเข้า
+        
         function showImportTrainingModal() {
             const content = `
                 <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าข้อมูลการอบรมจากไฟล์ Excel</h3>
@@ -5334,9 +5336,9 @@
                 <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded">
                     <h4 class="font-semibold text-blue-800 mb-2">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
                     <ul class="text-sm text-blue-700 list-disc list-inside space-y-1">
-                        <li>คอลัมน์ A: ปี พ.ศ. (เช่น 2567)</li>
-                        <li>คอลัมน์ B: รหัสเจ้าหน้าที่ (เช่น EMP001)</li>
-                        <li>คอลัมน์ C: หลักสูตรที่อบรม</li>
+                        <li>คอลัมน์ A: ปี พ.ศ. (เช่น 2567) <span class="text-gray-600">- ไม่บังคับ หากเป็นช่องว่างจะบันทึกเป็น 'ไม่ระบุ'</span></li>
+                        <li>คอลัมน์ B: รหัสเจ้าหน้าที่ (เช่น EMP001) <span class="text-red-600">- บังคับ</span></li>
+                        <li>คอลัมน์ C: หลักสูตรที่อบรม <span class="text-red-600">- บังคับ</span></li>
                     </ul>
                     <p class="text-sm text-blue-600 mt-2">หมายเหตุ: แถวแรกควรเป็นหัวตาราง</p>
                 </div>
@@ -5362,11 +5364,12 @@
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="px-3 py-2 text-left border-b">ปี พ.ศ.</th>
+                                    <th class="px-3 py-2 text-left border-b">ปี พ.ศ. <span class="text-gray-500">(ไม่บังคับ)</span></th>
                                     <th class="px-3 py-2 text-left border-b">รหัสเจ้าหน้าที่</th>
                                     <th class="px-3 py-2 text-left border-b">หลักสูตรที่อบรม</th>
                                     <th class="px-3 py-2 text-left border-b">ชื่อตามคำสั่ง</th>
                                     <th class="px-3 py-2 text-center border-b">สถานะ</th>
+                                    <th class="px-3 py-2 text-center border-b">ลบ</th>
                                 </tr>
                             </thead>
                             <tbody id="previewTableBody">
@@ -5438,14 +5441,14 @@
                     let statusClass = '';
                     let hasError = true;
                     
-                    if (!row.year || !row.officerId || !row.course) {
+                    if (!row.officerId || !row.course) {
                         status = '❌ ข้อมูลไม่ครบ';
                         statusClass = 'text-red-600';
                         hasError = true;
                         invalidCount++;
-                        errors.push(`แถว ${actualRowNum}: ข้อมูลไม่ครบถ้วน`);
+                        errors.push(`แถว ${actualRowNum}: ข้อมูลไม่ครบถ้วน (ควรมีรหัสเจ้าหน้าที่และหลักสูตร)`);
                     } else {
-                        const year = row.year.toString();
+                        const year = row.year ? row.year.toString() : 'ไม่ระบุ';
                         const officerId = row.officerId.toString().trim();
                         const course = row.course.toString().trim();
                         const officialName = row.officialName ? row.officialName.toString().trim() : '';
@@ -5480,12 +5483,17 @@
                     }
                     
                     const rowHtml = `
-                        <tr class="border-b ${hasError ? 'bg-red-50' : 'bg-green-50'}">
-                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.year || '-'}</td>
+                        <tr class="border-b ${hasError ? 'bg-red-50' : 'bg-green-50'}" data-row-index="${index}">
+                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.year || 'ไม่ระบุ'}</td>
                             <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.officerId || '-'}</td>
                             <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.course || '-'}</td>
                             <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.officialName || '-'}</td>
                             <td class="px-3 py-2 text-center ${statusClass}">${status}</td>
+                            <td class="px-3 py-2 text-center">
+                                <button type="button" onclick="removeTrainingRow(${index})" class="text-red-500 hover:text-red-700 hover:bg-red-100 rounded px-2 py-1" title="ลบแถวนี้">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </td>
                         </tr>
                     `;
                     
@@ -5495,6 +5503,16 @@
                         validRows.push(rowHtml);
                     }
                 });
+                
+                // เก็บข้อมูลสำหรับการนำเข้า
+                trainingImportData = jsonData.map((row, index) => ({
+                    originalIndex: index,
+                    year: row.year ? row.year.toString() : 'ไม่ระบุ',
+                    officerId: row.officerId ? row.officerId.toString().trim() : '',
+                    course: row.course ? row.course.toString().trim() : '',
+                    officialName: row.officialName ? row.officialName.toString().trim() : '',
+                    removed: false
+                }));
                 
                 // รวมแถวที่ผิดพลาดก่อน ตามด้วยแถวที่ถูกต้อง
                 const previewRows = [...errorRows, ...validRows].slice(0, 20).join('');
@@ -5524,15 +5542,8 @@
                 // Show preview section
                 dataPreview.classList.remove('hidden');
                 
-                // Enable import button only if there are valid records
-                importBtn.disabled = validCount === 0;
-                if (validCount === 0) {
-                    importBtn.textContent = 'ไม่สามารถนำเข้าได้ (ไม่มีข้อมูลที่ถูกต้อง)';
-                    importBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
-                } else {
-                    importBtn.textContent = `นำเข้าข้อมูล (${validCount} รายการ)`;
-                    importBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-                }
+                // อัปเดตสถิติและปุ่มนำเข้า
+                updateTrainingPreviewSummary();
                 
             } catch (error) {
                 console.error('Error previewing data:', error);
@@ -5546,6 +5557,91 @@
                 previewSummary.textContent = 'ไม่สามารถอ่านไฟล์ได้';
                 dataPreview.classList.remove('hidden');
                 importBtn.disabled = true;
+            }
+        }
+        
+        // ฟังก์ชันลบแถวจากตาราง
+        function removeTrainingRow(rowIndex) {
+            // ทำเครื่องหมายว่าแถวนี้ถูกลบ
+            if (trainingImportData[rowIndex]) {
+                trainingImportData[rowIndex].removed = true;
+            }
+            
+            // ลบแถวจากการแสดงผล
+            const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
+            if (row) {
+                row.style.opacity = '0.5';
+                row.style.textDecoration = 'line-through';
+                
+                // หาปุ่มลบและเปลี่ยนเป็นปุ่ม undo
+                const deleteBtn = row.querySelector('button');
+                if (deleteBtn) {
+                    deleteBtn.innerHTML = '<i class="fas fa-undo"></i>';
+                    deleteBtn.title = 'คืนค่าแถวนี้';
+                    deleteBtn.className = 'text-blue-500 hover:text-blue-700 hover:bg-blue-100 rounded px-2 py-1';
+                    deleteBtn.onclick = () => restoreTrainingRow(rowIndex);
+                }
+            }
+            
+            // อัปเดตสถิติ
+            updateTrainingPreviewSummary();
+        }
+        
+        // ฟังก์ชันคืนค่าแถว
+        function restoreTrainingRow(rowIndex) {
+            // ยกเลิกการทำเครื่องหมายลบ
+            if (trainingImportData[rowIndex]) {
+                trainingImportData[rowIndex].removed = false;
+            }
+            
+            // คืนค่าการแสดงผล
+            const row = document.querySelector(`tr[data-row-index="${rowIndex}"]`);
+            if (row) {
+                row.style.opacity = '1';
+                row.style.textDecoration = 'none';
+                
+                // เปลี่ยนปุ่มกลับเป็นปุ่มลบ
+                const restoreBtn = row.querySelector('button');
+                if (restoreBtn) {
+                    restoreBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    restoreBtn.title = 'ลบแถวนี้';
+                    restoreBtn.className = 'text-red-500 hover:text-red-700 hover:bg-red-100 rounded px-2 py-1';
+                    restoreBtn.onclick = () => removeTrainingRow(rowIndex);
+                }
+            }
+            
+            // อัปเดตสถิติ
+            updateTrainingPreviewSummary();
+        }
+        
+        // ฟังก์ชันอัปเดตสถิติ
+        function updateTrainingPreviewSummary() {
+            const activeData = trainingImportData.filter(item => !item.removed);
+            const totalCount = trainingImportData.length;
+            const activeCount = activeData.length;
+            const removedCount = totalCount - activeCount;
+            
+            const previewSummary = document.getElementById('previewSummary');
+            if (previewSummary) {
+                previewSummary.innerHTML = `
+                    <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalCount} รายการ</span> |
+                    <span class="text-green-600">จะนำเข้า: ${activeCount} รายการ</span>
+                    ${removedCount > 0 ? `| <span class="text-red-600">ถูกลบ: ${removedCount} รายการ</span>` : ''}
+                `;
+            }
+            
+            // อัปเดตสถานะปุ่มนำเข้า
+            const importBtn = document.getElementById('importBtn');
+            if (importBtn) {
+                if (activeCount === 0) {
+                    importBtn.disabled = true;
+                    importBtn.textContent = 'ไม่สามารถนำเข้าได้ (ไม่มีข้อมูลที่เลือก)';
+                    importBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                } else {
+                    importBtn.disabled = false;
+                    importBtn.textContent = `นำเข้าข้อมูล (${activeCount} รายการ)`;
+                    importBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+                }
             }
         }
         
@@ -5586,35 +5682,38 @@
                 let errorCount = 0;
                 const errors = [];
                 
+                // ใช้เฉพาะข้อมูลที่ไม่ถูกลบ
+                const activeData = trainingImportData.filter(item => !item.removed);
+                
                 // Process each row
-                for (let i = 0; i < jsonData.length; i++) {
-                    const row = jsonData[i];
-                    const progress = Math.round(((i + 1) / jsonData.length) * 75) + 25;
+                for (let i = 0; i < activeData.length; i++) {
+                    const row = activeData[i];
+                    const progress = Math.round(((i + 1) / activeData.length) * 75) + 25;
                     importProgressBar.style.width = progress + '%';
-                    importStatus.textContent = `กำลังประมวลผล ${i + 1} จาก ${jsonData.length} รายการ...`;
+                    importStatus.textContent = `กำลังประมวลผล ${i + 1} จาก ${activeData.length} รายการ...`;
                     
                     // Validate data
-                    if (!row.year || !row.officerId || !row.course) {
-                        errors.push(`แถว ${i + 2}: ข้อมูลไม่ครบถ้วน`);
+                    if (!row.officerId || !row.course) {
+                        errors.push(`แถว ${row.originalIndex + 2}: ข้อมูลไม่ครบถ้วน`);
                         errorCount++;
                         continue;
                     }
                     
-                    const year = row.year.toString();
-                    const officerId = row.officerId.toString().trim();
-                    const officialName = row.officialName ? row.officialName.toString().trim() : '';
-                    const course = row.course.toString().trim();
+                    const year = row.year === 'ไม่ระบุ' ? 'ไม่ระบุ' : row.year;
+                    const officerId = row.officerId.trim();
+                    const officialName = row.officialName || '';
+                    const course = row.course.trim();
                     
                     // Check if officer exists in system
                     const officerExists = officers.find(officer => officer.id === officerId);
                     if (!officerExists) {
-                        errors.push(`แถว ${i + 2}: ไม่พบรหัสเจ้าหน้าที่ "${officerId}" ในระบบ`);
+                        errors.push(`แถว ${row.originalIndex + 2}: ไม่พบรหัสเจ้าหน้าที่ "${officerId}" ในระบบ`);
                         errorCount++;
                         continue;
                     }
                     
-                    // Add year if not exists
-                    if (!trainingYears.includes(year)) {
+                    // Add year if not exists (ยกเว้น "ไม่ระบุ")
+                    if (year !== 'ไม่ระบุ' && !trainingYears.includes(year)) {
                         trainingYears.push(year);
                         trainingYears.sort();
                     }
