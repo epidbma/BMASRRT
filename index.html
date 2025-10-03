@@ -4207,6 +4207,10 @@
                     </div>
                     <div id="importPreview" class="hidden">
                         <h4 class="font-medium text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
+                        <div class="mb-2 text-sm">
+                            <span class="inline-block bg-red-50 text-red-600 px-2 py-1 rounded mr-2">🔴 แถวสีแดง: ข้อมูลที่มีข้อผิดพลาด</span>
+                            <span class="inline-block bg-green-50 text-green-600 px-2 py-1 rounded">🟢 แถวสีเขียว: ข้อมูลที่ถูกต้อง</span>
+                        </div>
                         <div class="max-h-80 overflow-auto border border-gray-200 rounded bg-white">
                             <table class="min-w-full text-sm">
                                 <thead class="bg-gray-50 sticky top-0">
@@ -4309,6 +4313,7 @@
                     }
                     
                     importData = [];
+                    const errorData = []; // เก็บข้อมูลที่ผิดพลาด
                     const errors = [];
                     
                     // ตรวจสอบว่า arrays ถูกโหลดแล้ว
@@ -4382,21 +4387,38 @@
                             }
                         }
                         
+                        // หาชื่อหน่วยงานและตำแหน่งสำหรับการแสดงผล
+                        const selectedOrg = organizations.find(org => org.id === cleanOrgId.toUpperCase());
+                        const selectedPosition = positions.find(pos => pos.id === cleanPositionId.toUpperCase());
+                        
                         if (rowErrors.length > 0) {
                             errors.push(...rowErrors);
+                            // เก็บข้อมูลที่ผิดพลาดเพื่อแสดงในตาราง
+                            errorData.push({
+                                id: officerId,
+                                name: cleanName || 'ไม่ระบุ',
+                                position_id: cleanPositionId || 'ไม่ระบุ',
+                                position_name: selectedPosition ? selectedPosition.name : (cleanPositionId || 'ไม่ระบุ'),
+                                phone: cleanPhone || 'ไม่ระบุ',
+                                email: cleanEmail || 'ไม่ระบุ',
+                                orgId: cleanOrgId || 'ไม่ระบุ',
+                                organization: selectedOrg ? selectedOrg.name : (cleanOrgId || 'ไม่ระบุ'),
+                                rowNum: rowNum,
+                                errors: rowErrors,
+                                hasError: true
+                            });
                         } else {
-                            // หาชื่อหน่วยงานจากรหัส
-                            const selectedOrg = organizations.find(org => org.id === cleanOrgId.toUpperCase());
-                            
                             importData.push({
                                 id: officerId, // ใช้รหัสที่สร้างอัตโนมัติ
                                 name: cleanName,
                                 position_id: cleanPositionId.toUpperCase(),
+                                position_name: selectedPosition ? selectedPosition.name : cleanPositionId.toUpperCase(),
                                 phone: cleanPhone || 'ไม่ระบุ', // ถ้าเป็นช่องว่างให้บันทึกเป็น 'ไม่ระบุ'
                                 email: cleanEmail || 'ไม่ระบุ', // ถ้าเป็นช่องว่างให้บันทึกเป็น 'ไม่ระบุ'
                                 orgId: cleanOrgId.toUpperCase(),
                                 organization: selectedOrg ? selectedOrg.name : cleanOrgId.toUpperCase(),
-                                createdAt: new Date().toISOString()
+                                createdAt: new Date().toISOString(),
+                                hasError: false
                             });
                         }
                     });
@@ -4417,24 +4439,45 @@
                     }
                     
                     previewTableBody.innerHTML = '';
-                    importData.forEach((officer, index) => {
-                        console.log(`Creating preview row ${index + 1}:`, officer);
-                        const org = organizations.find(o => o && o.id === officer.orgId);
-                        const position = positions.find(p => p && p.id === officer.position_id);
+                    
+                    // แสดงข้อมูลที่ผิดพลาดก่อน (สีแดง)
+                    errorData.forEach((officer, index) => {
+                        console.log(`Creating error preview row ${index + 1}:`, officer);
                         const row = document.createElement('tr');
-                        row.className = 'border-b';
+                        row.className = 'border-b bg-red-50';
                         row.innerHTML = `
-                            <td class="px-2 py-1">${officer.id}</td>
-                            <td class="px-2 py-1">${officer.name}</td>
-                            <td class="px-2 py-1">${position ? position.name : officer.position_id}</td>
-                            <td class="px-2 py-1">${officer.phone}</td>
-                            <td class="px-2 py-1">${officer.email}</td>
-                            <td class="px-2 py-1">${org ? org.name : officer.orgId}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.id}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.name}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.position_name}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.phone}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.email}</td>
+                            <td class="px-2 py-1 text-red-600">${officer.organization}</td>
                         `;
                         previewTableBody.appendChild(row);
                     });
                     
-                    previewCount.textContent = `พบข้อมูลที่ถูกต้อง ${importData.length} รายการ`;
+                    // แสดงข้อมูลที่ถูกต้อง (สีเขียว)
+                    importData.forEach((officer, index) => {
+                        console.log(`Creating valid preview row ${index + 1}:`, officer);
+                        const row = document.createElement('tr');
+                        row.className = 'border-b bg-green-50';
+                        row.innerHTML = `
+                            <td class="px-2 py-1 text-green-600">${officer.id}</td>
+                            <td class="px-2 py-1 text-green-600">${officer.name}</td>
+                            <td class="px-2 py-1 text-green-600">${officer.position_name}</td>
+                            <td class="px-2 py-1 text-green-600">${officer.phone}</td>
+                            <td class="px-2 py-1 text-green-600">${officer.email}</td>
+                            <td class="px-2 py-1 text-green-600">${officer.organization}</td>
+                        `;
+                        previewTableBody.appendChild(row);
+                    });
+                    
+                    const totalRows = errorData.length + importData.length;
+                    previewCount.innerHTML = `
+                        <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalRows} รายการ</span> |
+                        <span class="text-red-600">ข้อผิดพลาด: ${errorData.length} รายการ</span> |
+                        <span class="text-green-600">ถูกต้อง: ${importData.length} รายการ</span>
+                    `;
                     console.log('Making preview visible');
                     previewDiv.classList.remove('hidden');
                     
@@ -4446,6 +4489,7 @@
                         errorList.innerHTML = '';
                         errors.forEach(error => {
                             const li = document.createElement('li');
+                            li.className = 'text-red-700';
                             li.textContent = `• ${error}`;
                             errorList.appendChild(li);
                         });
