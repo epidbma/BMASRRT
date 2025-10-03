@@ -5490,8 +5490,8 @@
                             <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.officialName || '-'}</td>
                             <td class="px-3 py-2 text-center ${statusClass}">${status}</td>
                             <td class="px-3 py-2 text-center">
-                                <button type="button" onclick="removeTrainingRow(${index})" class="text-red-500 hover:text-red-700 hover:bg-red-100 rounded px-2 py-1" title="ลบแถวนี้">
-                                    <i class="fas fa-times"></i>
+                                <button type="button" onclick="removeTrainingRow(${index})" class="bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]" title="ลบแถวนี้">
+                                    ✕
                                 </button>
                             </td>
                         </tr>
@@ -5523,7 +5523,7 @@
                 if (jsonData.length > 20) {
                     previewTableBody.innerHTML += `
                         <tr class="bg-gray-100">
-                            <td colspan="4" class="px-3 py-2 text-center text-gray-600 italic">
+                            <td colspan="6" class="px-3 py-2 text-center text-gray-600 italic">
                                 ... และอีก ${jsonData.length - 20} รายการ
                             </td>
                         </tr>
@@ -5549,7 +5549,7 @@
                 console.error('Error previewing data:', error);
                 previewTableBody.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-3 py-2 text-center text-red-600">
+                        <td colspan="6" class="px-3 py-2 text-center text-red-600">
                             เกิดข้อผิดพลาดในการอ่านไฟล์: ${error.message}
                         </td>
                     </tr>
@@ -5576,9 +5576,9 @@
                 // หาปุ่มลบและเปลี่ยนเป็นปุ่ม undo
                 const deleteBtn = row.querySelector('button');
                 if (deleteBtn) {
-                    deleteBtn.innerHTML = '<i class="fas fa-undo"></i>';
+                    deleteBtn.innerHTML = '↶';
                     deleteBtn.title = 'คืนค่าแถวนี้';
-                    deleteBtn.className = 'text-blue-500 hover:text-blue-700 hover:bg-blue-100 rounded px-2 py-1';
+                    deleteBtn.className = 'bg-blue-500 text-white hover:bg-blue-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
                     deleteBtn.onclick = () => restoreTrainingRow(rowIndex);
                 }
             }
@@ -5603,9 +5603,9 @@
                 // เปลี่ยนปุ่มกลับเป็นปุ่มลบ
                 const restoreBtn = row.querySelector('button');
                 if (restoreBtn) {
-                    restoreBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    restoreBtn.innerHTML = '✕';
                     restoreBtn.title = 'ลบแถวนี้';
-                    restoreBtn.className = 'text-red-500 hover:text-red-700 hover:bg-red-100 rounded px-2 py-1';
+                    restoreBtn.className = 'bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
                     restoreBtn.onclick = () => removeTrainingRow(rowIndex);
                 }
             }
