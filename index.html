@@ -5354,7 +5354,11 @@
                 
                 <div id="dataPreview" class="mb-4 hidden">
                     <h4 class="font-semibold text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
-                    <div class="max-h-64 overflow-y-auto border border-gray-300 rounded">
+                    <div class="mb-2 text-sm">
+                        <span class="inline-block bg-red-50 text-red-600 px-2 py-1 rounded mr-2">🔴 แถวสีแดง: ข้อมูลที่มีข้อผิดพลาด</span>
+                        <span class="inline-block bg-green-50 text-green-600 px-2 py-1 rounded">🟢 แถวสีเขียว: ข้อมูลที่ถูกต้อง</span>
+                    </div>
+                    <div class="max-h-80 overflow-auto border border-gray-300 rounded">
                         <table class="w-full text-sm">
                             <thead class="bg-gray-50 sticky top-0">
                                 <tr>
@@ -5421,19 +5425,23 @@
                 const duplicateCheck = new Set();
                 const missingOfficers = new Set();
                 
-                // Create preview table rows
-                const previewRows = jsonData.slice(0, 20).map((row, index) => {
+                // แยกข้อมูลเป็น 2 กลุ่ม: ผิดพลาดและถูกต้อง
+                const errorRows = [];
+                const validRows = [];
+                
+                // ตรวจสอบข้อมูลทั้งหมด
+                jsonData.forEach((row, index) => {
                     const actualRowNum = index + 2; // +2 because we skip header and arrays are 0-indexed
                     
                     // Validate data
                     let status = '';
                     let statusClass = '';
-                    let isValid = true;
+                    let hasError = true;
                     
                     if (!row.year || !row.officerId || !row.course) {
                         status = '❌ ข้อมูลไม่ครบ';
                         statusClass = 'text-red-600';
-                        isValid = false;
+                        hasError = true;
                         invalidCount++;
                         errors.push(`แถว ${actualRowNum}: ข้อมูลไม่ครบถ้วน`);
                     } else {
@@ -5448,6 +5456,7 @@
                         if (!officerExists) {
                             status = '❌ ไม่พบรหัสเจ้าหน้าที่';
                             statusClass = 'text-red-600';
+                            hasError = true;
                             invalidCount++;
                             missingOfficers.add(officerId);
                             errors.push(`แถว ${actualRowNum}: ไม่พบรหัสเจ้าหน้าที่ "${officerId}" ในระบบ`);
@@ -5457,61 +5466,38 @@
                             if (duplicateCheck.has(duplicateKey)) {
                                 status = '⚠️ ข้อมูลซ้ำ';
                                 statusClass = 'text-orange-600';
+                                hasError = true;
                                 invalidCount++;
                                 errors.push(`แถว ${actualRowNum}: ข้อมูลซ้ำกัน (${year}-${officerId}-${course})`);
                             } else {
                                 duplicateCheck.add(duplicateKey);
                                 status = '✅ ถูกต้อง';
                                 statusClass = 'text-green-600';
+                                hasError = false;
                                 validCount++;
                             }
                         }
                     }
                     
-                    return `
-                        <tr class="border-b hover:bg-gray-50">
-                            <td class="px-3 py-2">${row.year || '-'}</td>
-                            <td class="px-3 py-2">${row.officerId || '-'}</td>
-                            <td class="px-3 py-2">${row.course || '-'}</td>
-                            <td class="px-3 py-2">${row.officialName || '-'}</td>
+                    const rowHtml = `
+                        <tr class="border-b ${hasError ? 'bg-red-50' : 'bg-green-50'}">
+                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.year || '-'}</td>
+                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.officerId || '-'}</td>
+                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.course || '-'}</td>
+                            <td class="px-3 py-2 ${hasError ? 'text-red-600' : 'text-green-600'}">${row.officialName || '-'}</td>
                             <td class="px-3 py-2 text-center ${statusClass}">${status}</td>
                         </tr>
                     `;
-                }).join('');
-                
-                // Check remaining rows for validation summary
-                for (let i = 20; i < jsonData.length; i++) {
-                    const row = jsonData[i];
-                    const actualRowNum = i + 2;
                     
-                    if (!row.year || !row.officerId || !row.course) {
-                        invalidCount++;
-                        errors.push(`แถว ${actualRowNum}: ข้อมูลไม่ครบถ้วน`);
+                    if (hasError) {
+                        errorRows.push(rowHtml);
                     } else {
-                        const year = row.year.toString();
-                        const officerId = row.officerId.toString().trim();
-                        const course = row.course.toString().trim();
-                        
-                        // Check if officer exists in system
-                        const officerExists = officers.find(officer => officer.id === officerId);
-                        
-                        if (!officerExists) {
-                            invalidCount++;
-                            missingOfficers.add(officerId);
-                            errors.push(`แถว ${actualRowNum}: ไม่พบรหัสเจ้าหน้าที่ "${officerId}" ในระบบ`);
-                        } else {
-                            const duplicateKey = `${year}-${officerId}-${course}`;
-                            
-                            if (duplicateCheck.has(duplicateKey)) {
-                                invalidCount++;
-                                errors.push(`แถว ${actualRowNum}: ข้อมูลซ้ำกัน (${year}-${officerId}-${course})`);
-                            } else {
-                                duplicateCheck.add(duplicateKey);
-                                validCount++;
-                            }
-                        }
+                        validRows.push(rowHtml);
                     }
-                }
+                });
+                
+                // รวมแถวที่ผิดพลาดก่อน ตามด้วยแถวที่ถูกต้อง
+                const previewRows = [...errorRows, ...validRows].slice(0, 20).join('');
                 
                 // Show preview
                 previewTableBody.innerHTML = previewRows;
@@ -5528,16 +5514,12 @@
                 
                 // Show summary
                 const totalCount = jsonData.length;
-                let summaryText = `ทั้งหมด ${totalCount} รายการ | `;
-                summaryText += `ถูกต้อง ${validCount} รายการ`;
-                if (invalidCount > 0) {
-                    summaryText += ` | มีปัญหา ${invalidCount} รายการ`;
-                }
-                if (missingOfficers.size > 0) {
-                    summaryText += ` | ไม่พบรหัสเจ้าหน้าที่: ${Array.from(missingOfficers).join(', ')}`;
-                }
-                
-                previewSummary.textContent = summaryText;
+                previewSummary.innerHTML = `
+                    <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalCount} รายการ</span> |
+                    <span class="text-red-600">ข้อผิดพลาด: ${invalidCount} รายการ</span> |
+                    <span class="text-green-600">ถูกต้อง: ${validCount} รายการ</span>
+                    ${missingOfficers.size > 0 ? `<br><span class="text-orange-600">ไม่พบรหัสเจ้าหน้าที่: ${Array.from(missingOfficers).join(', ')}</span>` : ''}
+                `;
                 
                 // Show preview section
                 dataPreview.classList.remove('hidden');
