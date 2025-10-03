@@ -126,14 +126,14 @@
             
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
             
-            <!-- Toggle between Login and Register -->
-            <div class="mt-6 text-center">
+            <!-- Toggle between Login and Register - Hidden -->
+            <div class="mt-6 text-center hidden">
                 <button id="toggleToRegister" class="text-medium-green hover:text-dark-green text-sm">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</button>
                 <button id="toggleToLogin" class="text-medium-green hover:text-dark-green text-sm hidden">มีบัญชีแล้ว? เข้าสู่ระบบ</button>
             </div>
             
-            <!-- Firebase Connection Status -->
-            <div id="connectionStatus" class="mt-4 text-xs text-center">
+            <!-- Firebase Connection Status - Hidden -->
+            <div id="connectionStatus" class="mt-4 text-xs text-center hidden">
                 <span class="text-gray-500">🔄 กำลังตรวจสอบการเชื่อมต่อ...</span>
             </div>
         </div>
@@ -772,7 +772,10 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-dark-green">บัญชีผู้ใช้งาน</h2>
-                        <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มบัญชีใหม่</button>
+                        <div class="flex space-x-2">
+                            <button onclick="showImportUsersModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">นำเข้าจาก Excel</button>
+                            <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มบัญชีใหม่</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border border-gray-200">
@@ -6528,6 +6531,426 @@
                 alert('เกิดข้อผิดพลาดในการเพิ่มบัญชีผู้ใช้งาน');
             }
         }
+        
+        // Import Users from Excel Functions
+        let userImportData = []; // เก็บข้อมูลบัญชีผู้ใช้ที่จะนำเข้า
+        
+        function showImportUsersModal() {
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าบัญชีผู้ใช้งานจากไฟล์ Excel</h3>
+                <div class="space-y-4">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h4 class="font-medium text-blue-800">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
+                        </div>
+                        <ul class="text-sm text-blue-700 space-y-1">
+                            <li>• คอลัมน์ A: ชื่อ-นามสกุล <span class="text-red-600">(บังคับ)</span></li>
+                            <li>• คอลัมน์ B: รหัสหน่วยงาน (เช่น ORG001) <span class="text-red-600">(บังคับ)</span></li>
+                            <li>• คอลัมน์ C: Username <span class="text-red-600">(บังคับ)</span></li>
+                            <li>• คอลัมน์ D: Password <span class="text-red-600">(บังคับ)</span></li>
+                            <li>• คอลัมน์ E: ระดับการเข้าถึง (admin หรือ officer) <span class="text-red-600">(บังคับ)</span></li>
+                            <li>• แถวแรกเป็นหัวตาราง (จะข้ามไป)</li>
+                        </ul>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">เลือกไฟล์ Excel</label>
+                        <input type="file" id="usersExcelFile" accept=".xlsx,.xls" onchange="previewUserImport()" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
+                        <p class="text-sm text-gray-500 mt-1">ตัวอย่างข้อมูลจะแสดงทันทีหลังจากเลือกไฟล์</p>
+                    </div>
+                    <div id="userImportPreview" class="hidden">
+                        <h4 class="font-medium text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
+                        <div class="mb-2 text-sm">
+                            <span class="inline-block bg-red-50 text-red-600 px-2 py-1 rounded mr-2">🔴 แถวสีแดง: ข้อมูลที่มีข้อผิดพลาด</span>
+                            <span class="inline-block bg-green-50 text-green-600 px-2 py-1 rounded">🟢 แถวสีเขียว: ข้อมูลที่ถูกต้อง</span>
+                        </div>
+                        <div class="max-h-80 overflow-auto border border-gray-200 rounded bg-white">
+                            <table class="min-w-full text-sm">
+                                <thead class="bg-gray-50 sticky top-0">
+                                    <tr>
+                                        <th class="px-2 py-1 text-left border-b">ชื่อ-นามสกุล</th>
+                                        <th class="px-2 py-1 text-left border-b">หน่วยงาน</th>
+                                        <th class="px-2 py-1 text-left border-b">Username</th>
+                                        <th class="px-2 py-1 text-left border-b">Password</th>
+                                        <th class="px-2 py-1 text-left border-b">ระดับการเข้าถึง</th>
+                                        <th class="px-2 py-1 text-center border-b">ลบ</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="userPreviewTableBody">
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="mt-2 text-sm text-gray-600">
+                            <span id="userPreviewCount"></span>
+                        </div>
+                    </div>
+                    <div id="userImportErrors" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
+                        <h4 class="font-medium text-red-800 mb-2">ข้อผิดพลาดที่พบ:</h4>
+                        <ul id="userErrorList" class="text-sm text-red-700 space-y-1">
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex justify-end space-x-2 mt-6">
+                    <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
+                    <button type="button" id="importUsersBtn" onclick="importUsers()" class="px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed" disabled>นำเข้าข้อมูล</button>
+                </div>
+            `;
+            showModal(content);
+        }
+        
+        function previewUserImport() {
+            const fileInput = document.getElementById('usersExcelFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert('กรุณาเลือกไฟล์ Excel');
+                return;
+            }
+            
+            if (typeof XLSX === 'undefined') {
+                alert('ไม่สามารถโหลดไลบรารีสำหรับอ่าน Excel กรุณารีเฟรชหน้า');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                    
+                    // Skip header row and process data
+                    const dataRows = jsonData.slice(1).filter(row => {
+                        return row && row.length > 0 && row[0] != null && row[0] !== '';
+                    });
+                    
+                    if (dataRows.length === 0) {
+                        alert('ไม่พบข้อมูลในไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
+                        return;
+                    }
+                    
+                    userImportData = [];
+                    const errorData = [];
+                    const errors = [];
+                    
+                    // ตรวจสอบว่า arrays ถูกโหลดแล้ว
+                    if (!organizations || !Array.isArray(organizations)) {
+                        alert('ข้อมูลหน่วยงานยังไม่ถูกโหลด กรุณารอสักครู่แล้วลองใหม่');
+                        return;
+                    }
+                    
+                    const existingUsernames = new Set(Object.keys(users || {}));
+                    const orgIds = new Set(organizations.filter(org => org && org.id).map(org => org.id));
+                    
+                    dataRows.forEach((row, index) => {
+                        const rowNum = index + 2;
+                        const [name, orgId, username, password, role] = row;
+                        
+                        // Validation
+                        const rowErrors = [];
+                        
+                        const cleanName = name ? String(name).trim() : '';
+                        const cleanOrgId = orgId ? String(orgId).trim().toUpperCase() : '';
+                        const cleanUsername = username ? String(username).trim() : '';
+                        const cleanPassword = password ? String(password).trim() : '';
+                        const cleanRole = role ? String(role).trim().toLowerCase() : '';
+                        
+                        if (!cleanName) {
+                            rowErrors.push(`แถว ${rowNum}: ชื่อ-นามสกุลไม่ถูกต้อง`);
+                        }
+                        
+                        if (!cleanOrgId) {
+                            rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงานไม่ถูกต้อง`);
+                        } else if (!orgIds.has(cleanOrgId)) {
+                            rowErrors.push(`แถว ${rowNum}: ไม่พบหน่วยงาน ${cleanOrgId} ในระบบ`);
+                        }
+                        
+                        if (!cleanUsername) {
+                            rowErrors.push(`แถว ${rowNum}: Username ไม่ถูกต้อง`);
+                        } else if (existingUsernames.has(cleanUsername)) {
+                            rowErrors.push(`แถว ${rowNum}: Username ${cleanUsername} มีอยู่ในระบบแล้ว`);
+                        }
+                        
+                        if (!cleanPassword) {
+                            rowErrors.push(`แถว ${rowNum}: Password ไม่ถูกต้อง`);
+                        }
+                        
+                        if (!cleanRole || (cleanRole !== 'admin' && cleanRole !== 'officer')) {
+                            rowErrors.push(`แถว ${rowNum}: ระดับการเข้าถึงต้องเป็น 'admin' หรือ 'officer'`);
+                        }
+                        
+                        // หาชื่อหน่วยงานจากรหัส
+                        const selectedOrg = organizations.find(org => org.id === cleanOrgId);
+                        
+                        if (rowErrors.length > 0) {
+                            errors.push(...rowErrors);
+                            errorData.push({
+                                name: cleanName || 'ไม่ระบุ',
+                                orgId: cleanOrgId || 'ไม่ระบุ',
+                                organization: selectedOrg ? selectedOrg.name : (cleanOrgId || 'ไม่ระบุ'),
+                                username: cleanUsername || 'ไม่ระบุ',
+                                password: cleanPassword || 'ไม่ระบุ',
+                                role: cleanRole || 'ไม่ระบุ',
+                                rowNum: rowNum,
+                                errors: rowErrors,
+                                hasError: true,
+                                removed: false,
+                                originalIndex: index
+                            });
+                        } else {
+                            userImportData.push({
+                                name: cleanName,
+                                orgId: cleanOrgId,
+                                organization: selectedOrg ? selectedOrg.name : cleanOrgId,
+                                username: cleanUsername,
+                                password: cleanPassword,
+                                role: cleanRole,
+                                hasError: false,
+                                removed: false,
+                                originalIndex: index
+                            });
+                        }
+                    });
+                    
+                    // Show preview
+                    const previewDiv = document.getElementById('userImportPreview');
+                    const previewTableBody = document.getElementById('userPreviewTableBody');
+                    const previewCount = document.getElementById('userPreviewCount');
+                    
+                    if (!previewDiv || !previewTableBody || !previewCount) {
+                        alert('เกิดข้อผิดพลาดในการแสดงตัวอย่าง');
+                        return;
+                    }
+                    
+                    previewTableBody.innerHTML = '';
+                    
+                    // แสดงข้อมูลที่ผิดพลาดก่อน (สีแดง)
+                    errorData.forEach((user, index) => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b bg-red-50';
+                        row.setAttribute('data-user-index', user.originalIndex);
+                        row.innerHTML = `
+                            <td class="px-2 py-1 text-red-600">${user.name}</td>
+                            <td class="px-2 py-1 text-red-600">${user.organization}</td>
+                            <td class="px-2 py-1 text-red-600">${user.username}</td>
+                            <td class="px-2 py-1 text-red-600">${user.password}</td>
+                            <td class="px-2 py-1 text-red-600">${user.role}</td>
+                            <td class="px-2 py-1 text-center">
+                                <button type="button" onclick="removeUserRow(${user.originalIndex}, true)" class="bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]" title="ลบแถวนี้">
+                                    ✕
+                                </button>
+                            </td>
+                        `;
+                        previewTableBody.appendChild(row);
+                    });
+                    
+                    // แสดงข้อมูลที่ถูกต้อง (สีเขียว)
+                    userImportData.forEach((user, index) => {
+                        const row = document.createElement('tr');
+                        row.className = 'border-b bg-green-50';
+                        row.setAttribute('data-user-index', user.originalIndex);
+                        row.innerHTML = `
+                            <td class="px-2 py-1 text-green-600">${user.name}</td>
+                            <td class="px-2 py-1 text-green-600">${user.organization}</td>
+                            <td class="px-2 py-1 text-green-600">${user.username}</td>
+                            <td class="px-2 py-1 text-green-600">${user.password}</td>
+                            <td class="px-2 py-1 text-green-600">${user.role}</td>
+                            <td class="px-2 py-1 text-center">
+                                <button type="button" onclick="removeUserRow(${user.originalIndex}, false)" class="bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]" title="ลบแถวนี้">
+                                    ✕
+                                </button>
+                            </td>
+                        `;
+                        previewTableBody.appendChild(row);
+                    });
+                    
+                    const totalRows = errorData.length + userImportData.length;
+                    previewCount.innerHTML = `
+                        <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalRows} รายการ</span> |
+                        <span class="text-red-600">ข้อผิดพลาด: ${errorData.length} รายการ</span> |
+                        <span class="text-green-600">ถูกต้อง: ${userImportData.length} รายการ</span>
+                    `;
+                    
+                    previewDiv.classList.remove('hidden');
+                    
+                    // Show errors if any
+                    const errorsDiv = document.getElementById('userImportErrors');
+                    const errorList = document.getElementById('userErrorList');
+                    
+                    if (errors.length > 0) {
+                        errorList.innerHTML = '';
+                        errors.forEach(error => {
+                            const li = document.createElement('li');
+                            li.className = 'text-red-700';
+                            li.textContent = `• ${error}`;
+                            errorList.appendChild(li);
+                        });
+                        errorsDiv.classList.remove('hidden');
+                    } else {
+                        errorsDiv.classList.add('hidden');
+                    }
+                    
+                    // อัปเดตสถิติและปุ่มนำเข้า
+                    updateUserPreviewSummary();
+                    
+                } catch (error) {
+                    console.error('Error previewing data:', error);
+                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + error.message);
+                }
+            };
+            
+            reader.readAsArrayBuffer(file);
+        }
+        
+        function removeUserRow(userIndex, isError) {
+            // ทำเครื่องหมายว่าแถวนี้ถูกลบ
+            if (isError) {
+                // หาใน errorData และทำเครื่องหมายลบ
+                const errorRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
+                if (errorRow) {
+                    errorRow.style.opacity = '0.5';
+                    errorRow.style.textDecoration = 'line-through';
+                }
+            } else {
+                // หาใน userImportData และทำเครื่องหมายลบ
+                const userDataIndex = userImportData.findIndex(user => user.originalIndex === userIndex);
+                if (userDataIndex !== -1) {
+                    userImportData[userDataIndex].removed = true;
+                }
+                
+                const userRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
+                if (userRow) {
+                    userRow.style.opacity = '0.5';
+                    userRow.style.textDecoration = 'line-through';
+                    
+                    const deleteBtn = userRow.querySelector('button');
+                    if (deleteBtn) {
+                        deleteBtn.innerHTML = '↶';
+                        deleteBtn.title = 'คืนค่าแถวนี้';
+                        deleteBtn.className = 'bg-blue-500 text-white hover:bg-blue-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
+                        deleteBtn.onclick = () => restoreUserRow(userIndex);
+                    }
+                }
+            }
+            
+            updateUserPreviewSummary();
+        }
+        
+        function restoreUserRow(userIndex) {
+            const userDataIndex = userImportData.findIndex(user => user.originalIndex === userIndex);
+            if (userDataIndex !== -1) {
+                userImportData[userDataIndex].removed = false;
+            }
+            
+            const userRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
+            if (userRow) {
+                userRow.style.opacity = '1';
+                userRow.style.textDecoration = 'none';
+                
+                const restoreBtn = userRow.querySelector('button');
+                if (restoreBtn) {
+                    restoreBtn.innerHTML = '✕';
+                    restoreBtn.title = 'ลบแถวนี้';
+                    restoreBtn.className = 'bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
+                    restoreBtn.onclick = () => removeUserRow(userIndex, false);
+                }
+            }
+            
+            updateUserPreviewSummary();
+        }
+        
+        function updateUserPreviewSummary() {
+            const activeData = userImportData.filter(item => !item.removed);
+            const totalCount = userImportData.length;
+            const activeCount = activeData.length;
+            const removedCount = totalCount - activeCount;
+            
+            const previewCount = document.getElementById('userPreviewCount');
+            if (previewCount) {
+                previewCount.innerHTML = `
+                    <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalCount} รายการ</span> |
+                    <span class="text-green-600">จะนำเข้า: ${activeCount} รายการ</span>
+                    ${removedCount > 0 ? `| <span class="text-red-600">ถูกลบ: ${removedCount} รายการ</span>` : ''}
+                `;
+            }
+            
+            const importBtn = document.getElementById('importUsersBtn');
+            if (importBtn) {
+                if (activeCount === 0) {
+                    importBtn.disabled = true;
+                    importBtn.textContent = 'ไม่สามารถนำเข้าได้ (ไม่มีข้อมูลที่เลือก)';
+                    importBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
+                } else {
+                    importBtn.disabled = false;
+                    importBtn.textContent = `นำเข้าข้อมูล (${activeCount} รายการ)`;
+                    importBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
+                }
+            }
+        }
+        
+        async function importUsers() {
+            const activeData = userImportData.filter(item => !item.removed);
+            
+            if (activeData.length === 0) {
+                alert('ไม่มีข้อมูลที่จะนำเข้า');
+                return;
+            }
+            
+            const importBtn = document.getElementById('importUsersBtn');
+            if (importBtn) {
+                importBtn.disabled = true;
+                importBtn.textContent = 'กำลังนำเข้า...';
+            }
+            
+            try {
+                let successCount = 0;
+                let errorCount = 0;
+                
+                for (const userData of activeData) {
+                    try {
+                        // เพิ่มบัญชีผู้ใช้ใหม่
+                        const userRef = ref(database, `users/${userData.username}`);
+                        await set(userRef, {
+                            name: userData.name,
+                            orgId: userData.orgId,
+                            role: userData.role,
+                            password: userData.password,
+                            createdAt: new Date().toISOString(),
+                            createdBy: currentUser.username
+                        });
+                        
+                        successCount++;
+                        
+                        // Log activity
+                        await logActivity('เพิ่ม', `นำเข้าบัญชีผู้ใช้งานจาก Excel: ${userData.name} (${userData.username}) - ${userData.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'} - ${userData.organization}`);
+                        
+                    } catch (error) {
+                        console.error('Error importing user:', userData.username, error);
+                        errorCount++;
+                    }
+                }
+                
+                // แสดงผลลัพธ์
+                if (successCount > 0) {
+                    alert(`นำเข้าบัญชีผู้ใช้งานสำเร็จ ${successCount} รายการ${errorCount > 0 ? ` (มีข้อผิดพลาด ${errorCount} รายการ)` : ''}`);
+                    hideModal();
+                    loadUserAccounts(); // รีโหลดข้อมูลบัญชีผู้ใช้
+                } else {
+                    alert('ไม่สามารถนำเข้าข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
+                }
+                
+            } catch (error) {
+                console.error('Error importing users:', error);
+                alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
+            } finally {
+                if (importBtn) {
+                    importBtn.disabled = false;
+                    importBtn.textContent = 'นำเข้าข้อมูล';
+                }
+            }
+        }
+        
         // Edit and Delete functions
         function editMember(id) {
             const officer = officers.find(o => o.id === id);
