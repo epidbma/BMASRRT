@@ -876,7 +876,7 @@
         let currentUser = null;
         let userRole = null;
         
-        const users = [];
+        let users = {}; // เปลี่ยนเป็น object เพื่อเก็บ username เป็น key
 
         const organizations = [];
 
@@ -959,18 +959,11 @@
                 
                 console.log('Firebase snapshots received');
                 
-                // อัพเดต local arrays ด้วยข้อมูลจาก Firebase
+                // อัพเดต local objects ด้วยข้อมูลจาก Firebase
                 if (usersSnap.val()) {
-                    users.length = 0;
                     const firebaseUsers = usersSnap.val();
-                    if (Array.isArray(firebaseUsers)) {
-                        users.push(...firebaseUsers);
-                    } else {
-                        // Firebase คืน Object, แปลงเป็น Array
-                        const userArray = Object.values(firebaseUsers);
-                        users.push(...userArray);
-                    }
-                    console.log('Loaded users from Firebase:', users.length, 'users');
+                    users = firebaseUsers || {};
+                    console.log('Loaded users from Firebase:', Object.keys(users).length, 'users');
                 }
                 
                 if (orgsSnap.val()) {
@@ -3270,25 +3263,26 @@
                 return;
             }
             
-            console.log('Found', users.length, 'users to display');
+            const userEntries = Object.entries(users);
+            console.log('Found', userEntries.length, 'users to display');
             
-            if (users.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+            if (userEntries.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = users.map(user => {
+            tbody.innerHTML = Object.entries(users).map(([username, user]) => {
                 const org = organizations.find(o => o.id === user.orgId);
                 return `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-2">${user.name}</td>
                         <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                        <td class="px-4 py-2">${user.username}</td>
+                        <td class="px-4 py-2">${username}</td>
                         <td class="px-4 py-2">${user.password}</td>
                         <td class="px-4 py-2">${user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'}</td>
                         <td class="px-4 py-2 text-center">
-                            <button onclick="editUser('${user.username}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                            <button onclick="deleteUser('${user.username}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                            <button onclick="editUser('${username}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
+                            <button onclick="deleteUser('${username}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
                         </td>
                     </tr>
                 `;
@@ -6640,7 +6634,7 @@
                         return;
                     }
                     
-                    const existingUsernames = new Set(Object.keys(users || {}));
+                    const existingUsernames = new Set(Object.keys(users));
                     const orgIds = new Set(organizations.filter(org => org && org.id).map(org => org.id));
                     
                     dataRows.forEach((row, index) => {
@@ -6935,7 +6929,7 @@
                 if (successCount > 0) {
                     alert(`นำเข้าบัญชีผู้ใช้งานสำเร็จ ${successCount} รายการ${errorCount > 0 ? ` (มีข้อผิดพลาด ${errorCount} รายการ)` : ''}`);
                     hideModal();
-                    loadUserAccounts(); // รีโหลดข้อมูลบัญชีผู้ใช้
+                    loadUserAccountsData(); // รีโหลดข้อมูลบัญชีผู้ใช้
                 } else {
                     alert('ไม่สามารถนำเข้าข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
                 }
@@ -7759,8 +7753,9 @@
         
         async function deleteUser(username) {
             // ป้องกันการลบ admin คนสุดท้าย
-            const adminUsers = users.filter(u => u.role === 'admin');
-            const userToDelete = users.find(u => u.username === username);
+            const userArray = Object.values(users);
+            const adminUsers = userArray.filter(u => u.role === 'admin');
+            const userToDelete = users[username];
             
             if (userToDelete && userToDelete.role === 'admin' && adminUsers.length <= 1) {
                 alert('ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้');
