@@ -70,6 +70,39 @@
             }
         }
     </script>
+    
+    <style>
+        /* Custom CSS for sticky columns */
+        .sticky-table {
+            position: relative;
+        }
+        
+        .sticky-table th:nth-child(1),
+        .sticky-table td:nth-child(1) {
+            position: sticky;
+            left: 0;
+            z-index: 10;
+            background-color: white;
+        }
+        
+        .sticky-table th:nth-child(2),
+        .sticky-table td:nth-child(2) {
+            position: sticky;
+            left: 120px;
+            z-index: 10;
+            background-color: white;
+        }
+        
+        .sticky-table th:nth-child(1) {
+            background-color: #2d5a3d !important;
+            z-index: 20;
+        }
+        
+        .sticky-table th:nth-child(2) {
+            background-color: #2d5a3d !important;
+            z-index: 20;
+        }
+    </style>
 </head>
 <body class="font-anuphan bg-gray-100 min-h-screen">
     <!-- Login Page -->
@@ -126,13 +159,13 @@
             
             <div id="loginError" class="mt-4 text-red-600 text-sm text-center hidden"></div>
             
-            <!-- Toggle between Login and Register - Hidden -->
+            <!-- Toggle between Login and Register -->
             <div class="mt-6 text-center hidden">
                 <button id="toggleToRegister" class="text-medium-green hover:text-dark-green text-sm">ยังไม่มีบัญชี? ลงทะเบียนที่นี่</button>
                 <button id="toggleToLogin" class="text-medium-green hover:text-dark-green text-sm hidden">มีบัญชีแล้ว? เข้าสู่ระบบ</button>
             </div>
             
-            <!-- Firebase Connection Status - Hidden -->
+            <!-- Firebase Connection Status -->
             <div id="connectionStatus" class="mt-4 text-xs text-center hidden">
                 <span class="text-gray-500">🔄 กำลังตรวจสอบการเชื่อมต่อ...</span>
             </div>
@@ -188,6 +221,33 @@
                             </div>
                         </div>
                     </div>
+                    <!-- Organization blocks will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Admin Officer Dashboard -->
+            <div id="adminOfficerDashboard" class="tab-content hidden">
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h2 class="text-xl font-bold text-dark-green mb-6">ข้อมูลเครือข่ายทีม SRRT</h2>
+                    
+                    <!-- Export Section -->
+                    <div class="mb-6 p-4 bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-lg font-semibold text-green-800 mb-1">ส่งออกข้อมูล</h3>
+                                <p class="text-sm text-green-600">ดาวน์โหลดข้อมูลสมาชิกทีม SRRT เป็นไฟล์ Excel</p>
+                            </div>
+                            <button onclick="exportAdminOfficersToExcel()" class="px-8 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center gap-3 font-semibold text-lg">
+                                <span class="text-xl">📊</span>
+                                <span>ส่งออก Excel</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Organization Data Section -->
+                <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                    <h3 class="text-lg font-bold text-dark-green mb-4">ข้อมูลเครือข่ายทีม SRRT</h3>
                     <!-- Organization blocks will be populated by JavaScript -->
                 </div>
             </div>
@@ -346,7 +406,13 @@
                     
                     <!-- SRRT Team Members Table -->
                     <div class="mb-8">
-                        <h3 class="text-lg font-bold text-dark-green mb-4">สมาชิกทีม SRRT</h3>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-lg font-bold text-dark-green">สมาชิกทีม SRRT</h3>
+                            <button onclick="exportSRRTTeamToExcel()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center gap-2">
+                                <span>📊</span>
+                                ส่งออก Excel
+                            </button>
+                        </div>
                         <div class="overflow-x-auto">
                             <table class="min-w-full bg-white border border-gray-200">
                                 <thead class="bg-blue-600 text-white">
@@ -384,7 +450,13 @@
 
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-bold text-dark-green">ตารางเจ้าหน้าที่ในหน่วยงาน</h3>
-                        <button onclick="showAddMemberModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มสมาชิกใหม่</button>
+                        <div class="flex gap-2">
+                            <button onclick="exportTeamMembersToExcel()" class="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors duration-200 flex items-center gap-2">
+                                <span>📊</span>
+                                ส่งออก Excel
+                            </button>
+                            <button onclick="showAddMemberModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มสมาชิกใหม่</button>
+                        </div>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border border-gray-200">
@@ -691,14 +763,16 @@
                     </div>
                     
                     <div class="overflow-x-auto">
-                        <table class="min-w-full bg-white border border-gray-200">
-                            <thead class="bg-medium-green text-white" id="trainingTableHeader">
-                                <!-- Table header will be populated dynamically -->
-                            </thead>
-                            <tbody id="trainingTableBody">
-                                <!-- Training data will be populated here -->
-                            </tbody>
-                        </table>
+                        <div class="relative">
+                            <table class="min-w-full bg-white border border-gray-200 sticky-table">
+                                <thead class="bg-medium-green text-white sticky top-0 z-10" id="trainingTableHeader">
+                                    <!-- Table header will be populated dynamically -->
+                                </thead>
+                                <tbody id="trainingTableBody">
+                                    <!-- Training data will be populated here -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -772,10 +846,7 @@
                 <div class="bg-white rounded-lg shadow-lg p-6">
                     <div class="flex justify-between items-center mb-6">
                         <h2 class="text-xl font-bold text-dark-green">บัญชีผู้ใช้งาน</h2>
-                        <div class="flex space-x-2">
-                            <button onclick="showImportUsersModal()" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">นำเข้าจาก Excel</button>
-                            <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มบัญชีใหม่</button>
-                        </div>
+                        <button onclick="showAddUserModal()" class="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">เพิ่มบัญชีใหม่</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="min-w-full bg-white border border-gray-200">
@@ -876,7 +947,7 @@
         let currentUser = null;
         let userRole = null;
         
-        let users = {}; // เปลี่ยนเป็น object เพื่อเก็บ username เป็น key
+        const users = [];
 
         const organizations = [];
 
@@ -959,11 +1030,18 @@
                 
                 console.log('Firebase snapshots received');
                 
-                // อัพเดต local objects ด้วยข้อมูลจาก Firebase
+                // อัพเดต local arrays ด้วยข้อมูลจาก Firebase
                 if (usersSnap.val()) {
+                    users.length = 0;
                     const firebaseUsers = usersSnap.val();
-                    users = firebaseUsers || {};
-                    console.log('Loaded users from Firebase:', Object.keys(users).length, 'users');
+                    if (Array.isArray(firebaseUsers)) {
+                        users.push(...firebaseUsers);
+                    } else {
+                        // Firebase คืน Object, แปลงเป็น Array
+                        const userArray = Object.values(firebaseUsers);
+                        users.push(...userArray);
+                    }
+                    console.log('Loaded users from Firebase:', users.length, 'users');
                 }
                 
                 if (orgsSnap.val()) {
@@ -1096,6 +1174,7 @@
                 '#newOrgId',
                 '#editOrgId',
                 '#orgFilter',
+                '#adminOrgFilter', // เพิ่มสำหรับ admin dashboard
                 '#addUserOrgId',
                 '#editMemberOrgId'
             ];
@@ -1382,6 +1461,7 @@
             } else if (userRole === 'admin') {
                 navTabs.innerHTML = `
                     <button id="summaryReportTab" onclick="showTab('summaryReport')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">สรุปข้อมูล</button>
+                    <button id="adminOfficerDashboardTab" onclick="showTab('adminOfficerDashboard')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ข้อมูลเครือข่ายทีม SRRT</button>
                     <button onclick="showTab('allOfficersDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลเจ้าหน้าที่</button>
                     <button onclick="showTab('trainingDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลการอบรม</button>
                     <button onclick="showTab('organizationsDB')" class="nav-tab px-4 py-2 text-white hover:bg-medium-green rounded">ฐานข้อมูลหน่วยงาน</button>
@@ -1428,6 +1508,9 @@
                 switch(tabId) {
                     case 'summaryReport':
                         shouldHighlight = buttonText.includes('สรุปข้อมูล');
+                        break;
+                    case 'adminOfficerDashboard':
+                        shouldHighlight = buttonText.includes('ข้อมูลเครือข่ายทีม SRRT');
                         break;
                     case 'officerDashboard':
                         shouldHighlight = buttonText.includes('ข้อมูลเครือข่ายทีม');
@@ -1516,6 +1599,10 @@
                     case 'summaryReport':
                         console.log('📊 Loading summary report with retry...');
                         loadSummaryReportDataWithRetry();
+                        break;
+                    case 'adminOfficerDashboard':
+                        console.log('👥 Loading admin officer dashboard...');
+                        loadOfficerDashboardData();
                         break;
                     case 'officerDashboard':
                         console.log('📄 Loading officer dashboard...');
@@ -1874,25 +1961,45 @@
         // Load officer dashboard data
         function loadOfficerDashboardData() {
             console.log('🔄 Loading officer dashboard data automatically...');
-            const container = document.querySelector('#officerDashboard .bg-white');
+            
+            // ตรวจสอบว่าเรียกจาก tab ไหน
+            const isAdminDashboard = document.getElementById('adminOfficerDashboard') && !document.getElementById('adminOfficerDashboard').classList.contains('hidden');
+            
+            let container;
+            if (isAdminDashboard) {
+                // For admin dashboard, use the Organization Data Section (last .bg-white div)
+                const adminDashboard = document.getElementById('adminOfficerDashboard');
+                const allContainers = adminDashboard.querySelectorAll('.bg-white');
+                container = allContainers[allContainers.length - 1]; // Get the last container (Organization Data Section)
+            } else {
+                // For regular officer dashboard
+                const containerId = '#officerDashboard';
+                container = document.querySelector(`${containerId} .bg-white`);
+            }
             
             if (!container) {
-                console.error('❌ Officer dashboard container not found');
+                console.error(`❌ ${isAdminDashboard ? 'Admin officer' : 'Officer'} dashboard container not found`);
                 return;
             }
             
-            console.log('✅ Officer dashboard container found, loading data...');
+            console.log(`✅ ${isAdminDashboard ? 'Admin officer' : 'Officer'} dashboard container found, loading data...`);
             
-            // Clear existing content except the header and search section
-            const header = container.querySelector('h2');
-            const searchSection = container.querySelector('.mb-6.bg-gray-50');
-            container.innerHTML = '';
-            if (header) container.appendChild(header);
-            
-            // Re-add search section if it exists
-            if (searchSection) {
-                container.appendChild(searchSection);
+            if (isAdminDashboard) {
+                // For admin dashboard, only clear the organization data section content, keep the header
+                const header = container.querySelector('h3');
+                container.innerHTML = '';
+                if (header) container.appendChild(header);
             } else {
+                // For regular officer dashboard, clear existing content except the header and search section
+                const header = container.querySelector('h2');
+                const searchSection = container.querySelector('.mb-6.bg-gray-50');
+                container.innerHTML = '';
+                if (header) container.appendChild(header);
+                
+                // Re-add search section if it exists
+                if (searchSection) {
+                    container.appendChild(searchSection);
+                } else {
                 // Create search section if it doesn't exist
                 const searchDiv = document.createElement('div');
                 searchDiv.className = 'mb-6 bg-gray-50 p-4 rounded-lg';
@@ -1919,6 +2026,7 @@
                     </div>
                 `;
                 container.appendChild(searchDiv);
+                }
             }
             
             // Populate organization filter dropdown using centralized function
@@ -1968,7 +2076,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${srrtMembers.map(officer => {
+                                    ${sortOfficersByPosition([...srrtMembers]).map(officer => {
                                         const position = positions.find(p => p.id === officer.position_id);
                                         const positionName = position ? position.name : 'ไม่ระบุ';
                                         return `
@@ -2056,7 +2164,10 @@
             // Update confirmation status display
             updateConfirmationStatusDisplay();
             
-            tbody.innerHTML = teamMembers.map(officer => {
+            // เรียงลำดับ teamMembers ตามตำแหน่ง
+            const sortedTeamMembers = sortOfficersByPosition([...teamMembers]);
+            
+            tbody.innerHTML = sortedTeamMembers.map(officer => {
                 const position = positions.find(p => p.id === officer.position_id);
                 const positionName = position ? position.name : 'ไม่ระบุ';
                 
@@ -2152,7 +2263,11 @@
             }
             
             emptyMessage.classList.add('hidden');
-            tbody.innerHTML = srrtMembers.map(officer => {
+            
+            // เรียงลำดับ srrtMembers ตามตำแหน่ง
+            const sortedSrrtMembers = sortOfficersByPosition([...srrtMembers]);
+            
+            tbody.innerHTML = sortedSrrtMembers.map(officer => {
                 const position = positions.find(p => p.id === officer.position_id);
                 const positionName = position ? position.name : 'ไม่ระบุ';
                 
@@ -2338,7 +2453,10 @@
             console.log('Current officers array:', officers.map(o => ({ id: o.id, name: o.name, orgId: o.orgId, organization: o.organization })));
             console.log('Current organizations array:', organizations.map(o => ({ id: o.id, name: o.name })));
             
-            const rows = filteredOfficers.map(officer => {
+            // เรียงลำดับเจ้าหน้าที่ตามหน่วยงาน
+            const sortedOfficers = sortOfficersByOrganization([...filteredOfficers]);
+            
+            const rows = sortedOfficers.map(officer => {
                 console.log('📋 Officer data:', officer);
                 
                 // หาข้อมูลหน่วยงาน
@@ -2702,7 +2820,7 @@
                 ];
                 
                 // Create Excel data
-                const excelData = dataToExport.map(officer => {
+                const excelData = sortOfficersByOrganization([...dataToExport]).map(officer => {
                     const org = organizations.find(o => o.id === officer.orgId);
                     const orgName = org ? org.name : 'ไม่ระบุ';
                     
@@ -2863,6 +2981,9 @@
             console.log('Displaying training data. Years:', trainingYears, 'Officers:', filteredOfficers.length);
             console.log('Training data keys:', Object.keys(trainingData));
             
+            // เรียงลำดับเจ้าหน้าที่ตามหน่วยงาน แล้วตามตำแหน่ง
+            const sortedOfficers = sortOfficersByOrganization([...filteredOfficers]);
+            
             // Create table header dynamically
             const thead = document.getElementById('trainingTableHeader');
             const yearHeaders = trainingYears.length > 0 ? 
@@ -2871,21 +2992,21 @@
             
             thead.innerHTML = `
                 <tr>
-                    <th class="px-4 py-2 text-left">รหัสเจ้าหน้าที่</th>
-                    <th class="px-4 py-2 text-left">ชื่อ-สกุล</th>
-                    <th class="px-4 py-2 text-left">ตำแหน่ง</th>
-                    <th class="px-4 py-2 text-left">หน่วยงาน</th>
+                    <th class="px-4 py-2 text-left bg-medium-green text-white sticky left-0 z-20 border-r-2 border-white" style="min-width: 120px;">รหัสเจ้าหน้าที่</th>
+                    <th class="px-4 py-2 text-left bg-medium-green text-white sticky left-[120px] z-20 border-r-2 border-white" style="min-width: 200px;">ชื่อ-สกุล</th>
+                    <th class="px-4 py-2 text-center bg-medium-green text-white" style="min-width: 100px;">อื่น ๆ</th>
                     ${yearHeaders}
                 </tr>
             `;
             
             // Create table body
             const tbody = document.getElementById('trainingTableBody');
-            tbody.innerHTML = filteredOfficers.map(officer => {
+            tbody.innerHTML = sortedOfficers.map(officer => {
                 const org = organizations.find(o => o.id === officer.orgId);
+                const officerPosition = positions.find(p => p.id === officer.position_id);
                 
                 // Debug: log training data for first few officers
-                if (filteredOfficers.indexOf(officer) < 3) {
+                if (sortedOfficers.indexOf(officer) < 3) {
                     console.log(`Officer ${officer.id} training data:`, trainingData[officer.id]);
                 }
                 
@@ -2917,15 +3038,18 @@
                     }).join('') :
                     '<td class="px-4 py-2 text-center text-gray-500">-</td>';
                 
-                const position = positions.find(p => p.id === officer.position_id);
-                const positionName = position ? position.name : 'ไม่ระบุ';
+                const officerPos = positions.find(p => p.id === officer.position_id);
+                const positionName = officerPos ? officerPos.name : 'ไม่ระบุ';
                 
                 return `
                     <tr class="border-b hover:bg-gray-50">
-                        <td class="px-4 py-2">${officer.id}</td>
-                        <td class="px-4 py-2">${officer.name}</td>
-                        <td class="px-4 py-2">${positionName}</td>
-                        <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
+                        <td class="px-4 py-2 bg-white sticky left-0 z-10 border-r border-gray-200 font-medium text-blue-600">${officer.id}</td>
+                        <td class="px-4 py-2 bg-white sticky left-[120px] z-10 border-r border-gray-200 font-medium">${officer.name}</td>
+                        <td class="px-4 py-2 text-center">
+                            <button onclick="showOfficerDetails('${officer.id}')" class="bg-blue-100 hover:bg-blue-200 text-blue-800 text-xs px-2 py-1 rounded transition-colors" title="ดูรายละเอียด">
+                                อื่น ๆ
+                            </button>
+                        </td>
                         ${yearCells}
                     </tr>
                 `;
@@ -2936,6 +3060,62 @@
             if (resultInfo) {
                 resultInfo.textContent = `แสดงผล ${filteredOfficers.length} จาก ${officers.length} รายการ`;
             }
+        }
+        
+        // ฟังก์ชันแสดงรายละเอียดเจ้าหน้าที่
+        function showOfficerDetails(officerId) {
+            const officer = officers.find(o => o.id === officerId);
+            if (!officer) {
+                alert('ไม่พบข้อมูลเจ้าหน้าที่');
+                return;
+            }
+            
+            const org = organizations.find(o => o.id === officer.orgId);
+            const position = positions.find(p => p.id === officer.position_id);
+            
+            const content = `
+                <h3 class="text-lg font-bold text-dark-green mb-4">รายละเอียดเจ้าหน้าที่</h3>
+                <div class="space-y-3">
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">รหัสเจ้าหน้าที่</label>
+                            <p class="text-blue-600 font-medium">${officer.id}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">ชื่อ-สกุล</label>
+                            <p class="font-medium">${officer.name}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">ตำแหน่ง</label>
+                            <p>${position ? position.name : 'ไม่ระบุ'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">หน่วยงาน</label>
+                            <p>${org ? org.name : 'ไม่ระบุ'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">เบอร์โทรศัพท์</label>
+                            <p>${officer.phone || 'ไม่ระบุ'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">อีเมล</label>
+                            <p>${officer.email || 'ไม่ระบุ'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">สถานะทีม SRRT</label>
+                            <p class="${officer.isSRRT ? 'text-green-600' : 'text-gray-600'}">${officer.isSRRT ? '✓ เป็นสมาชิกทีม SRRT' : '✗ ไม่เป็นสมาชิกทีม SRRT'}</p>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700">วันที่เพิ่มข้อมูล</label>
+                            <p class="text-sm text-gray-600">${officer.createdAt ? new Date(officer.createdAt).toLocaleDateString('th-TH') : 'ไม่ระบุ'}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex justify-end mt-6">
+                    <button onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ปิด</button>
+                </div>
+            `;
+            showModal(content);
         }
         
         // Apply training filters
@@ -3040,7 +3220,7 @@
                 // Create Excel data
                 const headers = ['รหัสเจ้าหน้าที่', 'ชื่อ-สกุล', 'หน่วยงาน', ...trainingYears];
                 
-                const excelData = dataToExport.map(officer => {
+                const excelData = sortOfficersByOrganization([...dataToExport]).map(officer => {
                     const org = organizations.find(o => o.id === officer.orgId);
                     const row = [
                         officer.id,
@@ -3086,6 +3266,317 @@
                 console.error('Error exporting training data:', error);
                 alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
             }
+        }
+
+        // Export admin officers data to Excel
+        function exportAdminOfficersToExcel() {
+            try {
+                // ส่งออกข้อมูลสมาชิก SRRT ทั้งหมด (ไม่มีการกรอง)
+                let dataToExport = officers.filter(officer => officer.isSRRT);
+                
+                // === ชีทที่ 1: ข้อมูลเจ้าหน้าที่ทีม SRRT ===
+                const officersHeaders = [
+                    'รหัสเจ้าหน้าที่', 
+                    'ชื่อ-สกุล', 
+                    'ตำแหน่ง',
+                    'โทรศัพท์',
+                    'อีเมล',
+                    'หน่วยงาน'
+                ];
+                
+                const officersData = sortOfficersByPosition([...dataToExport]).map(officer => {
+                    const org = organizations.find(o => o.id === officer.orgId);
+                    const position = positions.find(p => p.id === officer.position_id);
+                    
+                    return [
+                        officer.id || '',
+                        officer.name || '',
+                        position ? position.name : '',
+                        officer.phone || '',
+                        officer.email || '',
+                        org ? org.name : ''
+                    ];
+                });
+                
+                // === ชีทที่ 2: ข้อมูลหน่วยงาน ===
+                const orgHeaders = [
+                    'หน่วยงาน',
+                    'โทรศัพท์',
+                    'โทรสาร', 
+                    'อีเมล'
+                ];
+                
+                // Get unique organizations from SRRT members
+                const srrtOrganizations = [...new Set(dataToExport.map(officer => officer.orgId))]
+                    .map(orgId => organizations.find(org => org.id === orgId))
+                    .filter(org => org); // Remove null/undefined
+                
+                const orgData = srrtOrganizations.map(org => [
+                    org.name || '',
+                    org.phone || '',
+                    org.fax || '',
+                    org.email || ''
+                ]);
+                
+                // Create workbook with 2 sheets
+                const wb = XLSX.utils.book_new();
+                
+                // Sheet 1: Officers Data
+                const wsOfficers = XLSX.utils.aoa_to_sheet([officersHeaders, ...officersData]);
+                const officersColWidths = [
+                    { wch: 15 }, // รหัสเจ้าหน้าที่
+                    { wch: 25 }, // ชื่อ-สกุล
+                    { wch: 20 }, // ตำแหน่ง
+                    { wch: 15 }, // โทรศัพท์
+                    { wch: 25 }, // อีเมล
+                    { wch: 30 }  // หน่วยงาน
+                ];
+                wsOfficers['!cols'] = officersColWidths;
+                XLSX.utils.book_append_sheet(wb, wsOfficers, 'ข้อมูลเจ้าหน้าที่ SRRT');
+                
+                // Sheet 2: Organizations Data
+                const wsOrgs = XLSX.utils.aoa_to_sheet([orgHeaders, ...orgData]);
+                const orgColWidths = [
+                    { wch: 30 }, // หน่วยงาน
+                    { wch: 15 }, // โทรศัพท์
+                    { wch: 15 }, // โทรสาร
+                    { wch: 25 }  // อีเมล
+                ];
+                wsOrgs['!cols'] = orgColWidths;
+                XLSX.utils.book_append_sheet(wb, wsOrgs, 'ข้อมูลหน่วยงาน');
+                
+                // Generate filename with current date
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                const filename = `srrt_data_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                
+                console.log('SRRT data exported:', filename);
+                alert(`ส่งออกข้อมูลทีม SRRT เรียบร้อย\\n• เจ้าหน้าที่: ${dataToExport.length} รายการ\\n• หน่วยงาน: ${srrtOrganizations.length} หน่วยงาน\\nไฟล์: ${filename}`);
+                
+            } catch (error) {
+                console.error('Error exporting SRRT network data:', error);
+                alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+            }
+        }
+
+        // Export SRRT Team members to Excel (for officer dashboard)
+        function exportSRRTTeamToExcel() {
+            try {
+                if (!currentUser || !currentUser.orgId) {
+                    alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+                    return;
+                }
+
+                const userOrg = currentUser.orgId;
+                const srrtMembers = officers.filter(officer => officer.orgId === userOrg && officer.isSRRT);
+                
+                if (srrtMembers.length === 0) {
+                    alert('ไม่มีสมาชิกทีม SRRT ในหน่วยงานของท่าน');
+                    return;
+                }
+
+                const headers = [
+                    'รหัสเจ้าหน้าที่',
+                    'ชื่อ-สกุล',
+                    'ตำแหน่ง',
+                    'เบอร์โทรศัพท์',
+                    'อีเมล',
+                    'สถานะการอบรม'
+                ];
+
+                const excelData = sortOfficersByPosition([...srrtMembers]).map(officer => {
+                    const position = positions.find(p => p.id === officer.position_id);
+                    const positionName = position ? position.name : 'ไม่ระบุ';
+                    
+                    // ตรวจสอบสถานะการอบรม
+                    const training = trainingData[officer.id] || {};
+                    const hasTraining = trainingYears.some(year => 
+                        training[year] && training[year].length > 0
+                    );
+                    const trainingStatus = hasTraining ? 'ผ่านการอบรมแล้ว' : 'ยังไม่ผ่านการอบรม';
+
+                    return [
+                        officer.id || '',
+                        officer.name || '',
+                        positionName,
+                        officer.phone || '',
+                        officer.email || '',
+                        trainingStatus
+                    ];
+                });
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...excelData]);
+                
+                // Set column widths
+                const colWidths = [
+                    { wch: 15 }, // รหัสเจ้าหน้าที่
+                    { wch: 25 }, // ชื่อ-สกุล
+                    { wch: 20 }, // ตำแหน่ง
+                    { wch: 15 }, // เบอร์โทรศัพท์
+                    { wch: 25 }, // อีเมล
+                    { wch: 20 }  // สถานะการอบรม
+                ];
+                ws['!cols'] = colWidths;
+                
+                XLSX.utils.book_append_sheet(wb, ws, 'สมาชิกทีม SRRT');
+                
+                // Generate filename with current date and org name
+                const org = organizations.find(o => o.id === userOrg);
+                const orgName = org ? org.name.replace(/[\/\\?%*:|"<>]/g, '') : 'unknown'; // Remove invalid filename characters
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                const filename = `srrt_team_${orgName}_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                
+                console.log('SRRT team data exported:', filename);
+                alert(`ส่งออกข้อมูลสมาชิกทีม SRRT เรียบร้อย\\nจำนวน: ${srrtMembers.length} รายการ\\nไฟล์: ${filename}`);
+                
+            } catch (error) {
+                console.error('Error exporting SRRT team data:', error);
+                alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+            }
+        }
+
+        // Export Team members to Excel (for officer dashboard)
+        function exportTeamMembersToExcel() {
+            try {
+                if (!currentUser || !currentUser.orgId) {
+                    alert('ไม่พบข้อมูลผู้ใช้ กรุณาเข้าสู่ระบบใหม่');
+                    return;
+                }
+
+                const userOrg = currentUser.orgId;
+                const teamMembers = officers.filter(officer => officer.orgId === userOrg);
+                
+                if (teamMembers.length === 0) {
+                    alert('ไม่มีเจ้าหน้าที่ในหน่วยงานของท่าน');
+                    return;
+                }
+
+                const headers = [
+                    'รหัสเจ้าหน้าที่',
+                    'ชื่อ-สกุล',
+                    'ตำแหน่ง',
+                    'เบอร์โทรศัพท์',
+                    'อีเมล',
+                    'สถานะการอบรม',
+                    'สมาชิก SRRT'
+                ];
+
+                const excelData = sortOfficersByPosition([...teamMembers]).map(officer => {
+                    const position = positions.find(p => p.id === officer.position_id);
+                    const positionName = position ? position.name : 'ไม่ระบุ';
+                    
+                    // ตรวจสอบสถานะการอบรม
+                    const training = trainingData[officer.id] || {};
+                    const hasTraining = trainingYears.some(year => 
+                        training[year] && training[year].length > 0
+                    );
+                    const trainingStatus = hasTraining ? 'ผ่านการอบรมแล้ว' : 'ยังไม่ผ่านการอบรม';
+                    
+                    // สถานะสมาชิก SRRT
+                    const srrtStatus = officer.isSRRT ? 'เป็นสมาชิก' : 'ไม่เป็นสมาชิก';
+
+                    return [
+                        officer.id || '',
+                        officer.name || '',
+                        positionName,
+                        officer.phone || '',
+                        officer.email || '',
+                        trainingStatus,
+                        srrtStatus
+                    ];
+                });
+
+                // Create workbook
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([headers, ...excelData]);
+                
+                // Set column widths
+                const colWidths = [
+                    { wch: 15 }, // รหัสเจ้าหน้าที่
+                    { wch: 25 }, // ชื่อ-สกุล
+                    { wch: 20 }, // ตำแหน่ง
+                    { wch: 15 }, // เบอร์โทรศัพท์
+                    { wch: 25 }, // อีเมล
+                    { wch: 20 }, // สถานะการอบรม
+                    { wch: 15 }  // สมาชิก SRRT
+                ];
+                ws['!cols'] = colWidths;
+                
+                XLSX.utils.book_append_sheet(wb, ws, 'เจ้าหน้าที่ในหน่วยงาน');
+                
+                // Generate filename with current date and org name
+                const org = organizations.find(o => o.id === userOrg);
+                const orgName = org ? org.name.replace(/[\/\\?%*:|"<>]/g, '') : 'unknown'; // Remove invalid filename characters
+                const now = new Date();
+                const dateStr = now.toISOString().split('T')[0].replace(/-/g, '');
+                const filename = `team_members_${orgName}_${dateStr}.xlsx`;
+                
+                XLSX.writeFile(wb, filename);
+                
+                console.log('Team members data exported:', filename);
+                alert(`ส่งออกข้อมูลเจ้าหน้าที่ในหน่วยงานเรียบร้อย\\nจำนวน: ${teamMembers.length} รายการ\\nไฟล์: ${filename}`);
+                
+            } catch (error) {
+                console.error('Error exporting team members data:', error);
+                alert('เกิดข้อผิดพลาดในการส่งออกข้อมูล');
+            }
+        }
+
+        // ฟังก์ชันเรียงลำดับเจ้าหน้าที่ตามตำแหน่ง (ตามลำดับในฐานข้อมูลตำแหน่ง)
+        function sortOfficersByPosition(officers) {
+            return officers.sort((a, b) => {
+                const positionA = positions.find(p => p.id === a.position_id);
+                const positionB = positions.find(p => p.id === b.position_id);
+                
+                // หา index ของตำแหน่งใน array positions
+                const indexA = positionA ? positions.indexOf(positionA) : 999;
+                const indexB = positionB ? positions.indexOf(positionB) : 999;
+                
+                // เรียงตาม index (ลำดับในฐานข้อมูล)
+                if (indexA !== indexB) {
+                    return indexA - indexB;
+                }
+                
+                // ถ้าตำแหน่งเดียวกัน เรียงตามชื่อ
+                return (a.name || '').localeCompare(b.name || '', 'th');
+            });
+        }
+
+        // ฟังก์ชันเรียงลำดับเจ้าหน้าที่ตามหน่วยงาน (ตามลำดับในฐานข้อมูลหน่วยงาน)
+        function sortOfficersByOrganization(officers) {
+            return officers.sort((a, b) => {
+                const orgA = organizations.find(o => o.id === a.orgId);
+                const orgB = organizations.find(o => o.id === b.orgId);
+                
+                // หา index ของหน่วยงานใน array organizations
+                const indexA = orgA ? organizations.indexOf(orgA) : 999;
+                const indexB = orgB ? organizations.indexOf(orgB) : 999;
+                
+                // เรียงตาม index (ลำดับในฐานข้อมูล)
+                if (indexA !== indexB) {
+                    return indexA - indexB;
+                }
+                
+                // ถ้าหน่วยงานเดียวกัน เรียงตามตำแหน่งแล้วตามชื่อ
+                const positionA = positions.find(p => p.id === a.position_id);
+                const positionB = positions.find(p => p.id === b.position_id);
+                
+                const posIndexA = positionA ? positions.indexOf(positionA) : 999;
+                const posIndexB = positionB ? positions.indexOf(positionB) : 999;
+                
+                if (posIndexA !== posIndexB) {
+                    return posIndexA - posIndexB;
+                }
+                
+                return (a.name || '').localeCompare(b.name || '', 'th');
+            });
         }
 
         // Apply organization filters
@@ -3263,26 +3754,25 @@
                 return;
             }
             
-            const userEntries = Object.entries(users);
-            console.log('Found', userEntries.length, 'users to display');
+            console.log('Found', users.length, 'users to display');
             
-            if (userEntries.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500">ไม่มีข้อมูลผู้ใช้งาน</td></tr>';
                 return;
             }
             
-            tbody.innerHTML = Object.entries(users).map(([username, user]) => {
+            tbody.innerHTML = users.map(user => {
                 const org = organizations.find(o => o.id === user.orgId);
                 return `
                     <tr class="border-b hover:bg-gray-50">
                         <td class="px-4 py-2">${user.name}</td>
                         <td class="px-4 py-2">${org ? org.name : 'ไม่ระบุ'}</td>
-                        <td class="px-4 py-2">${username}</td>
+                        <td class="px-4 py-2">${user.username}</td>
                         <td class="px-4 py-2">${user.password}</td>
                         <td class="px-4 py-2">${user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'}</td>
                         <td class="px-4 py-2 text-center">
-                            <button onclick="editUser('${username}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
-                            <button onclick="deleteUser('${username}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
+                            <button onclick="editUser('${user.username}')" class="bg-blue-500 text-white px-2 py-1 rounded text-sm hover:bg-blue-600 mr-1">แก้ไข</button>
+                            <button onclick="deleteUser('${user.username}')" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">ลบ</button>
                         </td>
                     </tr>
                 `;
@@ -3667,6 +4157,7 @@
             filterOfficers();
         }
         
+        
         function filterOfficers() {
             const searchTerm = document.getElementById('officerSearch')?.value.toLowerCase() || '';
             const orgFilter = document.getElementById('orgFilter')?.value || '';
@@ -3971,6 +4462,9 @@
                         case 'summaryReport':
                             loadSummaryReportDataWithRetry();
                             updatePositionSummary(); // อัปเดตสรุปตำแหน่งด้วย
+                            break;
+                        case 'adminOfficerDashboard':
+                            loadOfficerDashboardData();
                             break;
                         case 'officerDashboard':
                             loadOfficerDashboardData();
@@ -6525,426 +7019,6 @@
                 alert('เกิดข้อผิดพลาดในการเพิ่มบัญชีผู้ใช้งาน');
             }
         }
-        
-        // Import Users from Excel Functions
-        let userImportData = []; // เก็บข้อมูลบัญชีผู้ใช้ที่จะนำเข้า
-        
-        function showImportUsersModal() {
-            const content = `
-                <h3 class="text-lg font-bold text-dark-green mb-4">นำเข้าบัญชีผู้ใช้งานจากไฟล์ Excel</h3>
-                <div class="space-y-4">
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div class="flex justify-between items-start mb-2">
-                            <h4 class="font-medium text-blue-800">รูปแบบไฟล์ Excel ที่ต้องการ:</h4>
-                        </div>
-                        <ul class="text-sm text-blue-700 space-y-1">
-                            <li>• คอลัมน์ A: ชื่อ-นามสกุล <span class="text-red-600">(บังคับ)</span></li>
-                            <li>• คอลัมน์ B: รหัสหน่วยงาน (เช่น ORG001) <span class="text-red-600">(บังคับ)</span></li>
-                            <li>• คอลัมน์ C: Username <span class="text-red-600">(บังคับ)</span></li>
-                            <li>• คอลัมน์ D: Password <span class="text-red-600">(บังคับ)</span></li>
-                            <li>• คอลัมน์ E: ระดับการเข้าถึง (admin หรือ officer) <span class="text-red-600">(บังคับ)</span></li>
-                            <li>• แถวแรกเป็นหัวตาราง (จะข้ามไป)</li>
-                        </ul>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">เลือกไฟล์ Excel</label>
-                        <input type="file" id="usersExcelFile" accept=".xlsx,.xls" onchange="previewUserImport()" class="w-full px-3 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-medium-green">
-                        <p class="text-sm text-gray-500 mt-1">ตัวอย่างข้อมูลจะแสดงทันทีหลังจากเลือกไฟล์</p>
-                    </div>
-                    <div id="userImportPreview" class="hidden">
-                        <h4 class="font-medium text-gray-800 mb-2">ตัวอย่างข้อมูลที่จะนำเข้า:</h4>
-                        <div class="mb-2 text-sm">
-                            <span class="inline-block bg-red-50 text-red-600 px-2 py-1 rounded mr-2">🔴 แถวสีแดง: ข้อมูลที่มีข้อผิดพลาด</span>
-                            <span class="inline-block bg-green-50 text-green-600 px-2 py-1 rounded">🟢 แถวสีเขียว: ข้อมูลที่ถูกต้อง</span>
-                        </div>
-                        <div class="max-h-80 overflow-auto border border-gray-200 rounded bg-white">
-                            <table class="min-w-full text-sm">
-                                <thead class="bg-gray-50 sticky top-0">
-                                    <tr>
-                                        <th class="px-2 py-1 text-left border-b">ชื่อ-นามสกุล</th>
-                                        <th class="px-2 py-1 text-left border-b">หน่วยงาน</th>
-                                        <th class="px-2 py-1 text-left border-b">Username</th>
-                                        <th class="px-2 py-1 text-left border-b">Password</th>
-                                        <th class="px-2 py-1 text-left border-b">ระดับการเข้าถึง</th>
-                                        <th class="px-2 py-1 text-center border-b">ลบ</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="userPreviewTableBody">
-                                </tbody>
-                            </table>
-                        </div>
-                        <div class="mt-2 text-sm text-gray-600">
-                            <span id="userPreviewCount"></span>
-                        </div>
-                    </div>
-                    <div id="userImportErrors" class="hidden bg-red-50 border border-red-200 rounded-lg p-4">
-                        <h4 class="font-medium text-red-800 mb-2">ข้อผิดพลาดที่พบ:</h4>
-                        <ul id="userErrorList" class="text-sm text-red-700 space-y-1">
-                        </ul>
-                    </div>
-                </div>
-                <div class="flex justify-end space-x-2 mt-6">
-                    <button type="button" onclick="hideModal()" class="px-4 py-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400">ยกเลิก</button>
-                    <button type="button" id="importUsersBtn" onclick="importUsers()" class="px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed" disabled>นำเข้าข้อมูล</button>
-                </div>
-            `;
-            showModal(content);
-        }
-        
-        function previewUserImport() {
-            const fileInput = document.getElementById('usersExcelFile');
-            const file = fileInput.files[0];
-            
-            if (!file) {
-                alert('กรุณาเลือกไฟล์ Excel');
-                return;
-            }
-            
-            if (typeof XLSX === 'undefined') {
-                alert('ไม่สามารถโหลดไลบรารีสำหรับอ่าน Excel กรุณารีเฟรชหน้า');
-                return;
-            }
-            
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = new Uint8Array(e.target.result);
-                    const workbook = XLSX.read(data, { type: 'array' });
-                    const firstSheetName = workbook.SheetNames[0];
-                    const worksheet = workbook.Sheets[firstSheetName];
-                    const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
-                    
-                    // Skip header row and process data
-                    const dataRows = jsonData.slice(1).filter(row => {
-                        return row && row.length > 0 && row[0] != null && row[0] !== '';
-                    });
-                    
-                    if (dataRows.length === 0) {
-                        alert('ไม่พบข้อมูลในไฟล์ Excel กรุณาตรวจสอบรูปแบบไฟล์');
-                        return;
-                    }
-                    
-                    userImportData = [];
-                    const errorData = [];
-                    const errors = [];
-                    
-                    // ตรวจสอบว่า arrays ถูกโหลดแล้ว
-                    if (!organizations || !Array.isArray(organizations)) {
-                        alert('ข้อมูลหน่วยงานยังไม่ถูกโหลด กรุณารอสักครู่แล้วลองใหม่');
-                        return;
-                    }
-                    
-                    const existingUsernames = new Set(Object.keys(users));
-                    const orgIds = new Set(organizations.filter(org => org && org.id).map(org => org.id));
-                    
-                    dataRows.forEach((row, index) => {
-                        const rowNum = index + 2;
-                        const [name, orgId, username, password, role] = row;
-                        
-                        // Validation
-                        const rowErrors = [];
-                        
-                        const cleanName = name ? String(name).trim() : '';
-                        const cleanOrgId = orgId ? String(orgId).trim().toUpperCase() : '';
-                        const cleanUsername = username ? String(username).trim() : '';
-                        const cleanPassword = password ? String(password).trim() : '';
-                        const cleanRole = role ? String(role).trim().toLowerCase() : '';
-                        
-                        if (!cleanName) {
-                            rowErrors.push(`แถว ${rowNum}: ชื่อ-นามสกุลไม่ถูกต้อง`);
-                        }
-                        
-                        if (!cleanOrgId) {
-                            rowErrors.push(`แถว ${rowNum}: รหัสหน่วยงานไม่ถูกต้อง`);
-                        } else if (!orgIds.has(cleanOrgId)) {
-                            rowErrors.push(`แถว ${rowNum}: ไม่พบหน่วยงาน ${cleanOrgId} ในระบบ`);
-                        }
-                        
-                        if (!cleanUsername) {
-                            rowErrors.push(`แถว ${rowNum}: Username ไม่ถูกต้อง`);
-                        } else if (existingUsernames.has(cleanUsername)) {
-                            rowErrors.push(`แถว ${rowNum}: Username ${cleanUsername} มีอยู่ในระบบแล้ว`);
-                        }
-                        
-                        if (!cleanPassword) {
-                            rowErrors.push(`แถว ${rowNum}: Password ไม่ถูกต้อง`);
-                        }
-                        
-                        if (!cleanRole || (cleanRole !== 'admin' && cleanRole !== 'officer')) {
-                            rowErrors.push(`แถว ${rowNum}: ระดับการเข้าถึงต้องเป็น 'admin' หรือ 'officer'`);
-                        }
-                        
-                        // หาชื่อหน่วยงานจากรหัส
-                        const selectedOrg = organizations.find(org => org.id === cleanOrgId);
-                        
-                        if (rowErrors.length > 0) {
-                            errors.push(...rowErrors);
-                            errorData.push({
-                                name: cleanName || 'ไม่ระบุ',
-                                orgId: cleanOrgId || 'ไม่ระบุ',
-                                organization: selectedOrg ? selectedOrg.name : (cleanOrgId || 'ไม่ระบุ'),
-                                username: cleanUsername || 'ไม่ระบุ',
-                                password: cleanPassword || 'ไม่ระบุ',
-                                role: cleanRole || 'ไม่ระบุ',
-                                rowNum: rowNum,
-                                errors: rowErrors,
-                                hasError: true,
-                                removed: false,
-                                originalIndex: index
-                            });
-                        } else {
-                            userImportData.push({
-                                name: cleanName,
-                                orgId: cleanOrgId,
-                                organization: selectedOrg ? selectedOrg.name : cleanOrgId,
-                                username: cleanUsername,
-                                password: cleanPassword,
-                                role: cleanRole,
-                                hasError: false,
-                                removed: false,
-                                originalIndex: index
-                            });
-                        }
-                    });
-                    
-                    // Show preview
-                    const previewDiv = document.getElementById('userImportPreview');
-                    const previewTableBody = document.getElementById('userPreviewTableBody');
-                    const previewCount = document.getElementById('userPreviewCount');
-                    
-                    if (!previewDiv || !previewTableBody || !previewCount) {
-                        alert('เกิดข้อผิดพลาดในการแสดงตัวอย่าง');
-                        return;
-                    }
-                    
-                    previewTableBody.innerHTML = '';
-                    
-                    // แสดงข้อมูลที่ผิดพลาดก่อน (สีแดง)
-                    errorData.forEach((user, index) => {
-                        const row = document.createElement('tr');
-                        row.className = 'border-b bg-red-50';
-                        row.setAttribute('data-user-index', user.originalIndex);
-                        row.innerHTML = `
-                            <td class="px-2 py-1 text-red-600">${user.name}</td>
-                            <td class="px-2 py-1 text-red-600">${user.organization}</td>
-                            <td class="px-2 py-1 text-red-600">${user.username}</td>
-                            <td class="px-2 py-1 text-red-600">${user.password}</td>
-                            <td class="px-2 py-1 text-red-600">${user.role}</td>
-                            <td class="px-2 py-1 text-center">
-                                <button type="button" onclick="removeUserRow(${user.originalIndex}, true)" class="bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]" title="ลบแถวนี้">
-                                    ✕
-                                </button>
-                            </td>
-                        `;
-                        previewTableBody.appendChild(row);
-                    });
-                    
-                    // แสดงข้อมูลที่ถูกต้อง (สีเขียว)
-                    userImportData.forEach((user, index) => {
-                        const row = document.createElement('tr');
-                        row.className = 'border-b bg-green-50';
-                        row.setAttribute('data-user-index', user.originalIndex);
-                        row.innerHTML = `
-                            <td class="px-2 py-1 text-green-600">${user.name}</td>
-                            <td class="px-2 py-1 text-green-600">${user.organization}</td>
-                            <td class="px-2 py-1 text-green-600">${user.username}</td>
-                            <td class="px-2 py-1 text-green-600">${user.password}</td>
-                            <td class="px-2 py-1 text-green-600">${user.role}</td>
-                            <td class="px-2 py-1 text-center">
-                                <button type="button" onclick="removeUserRow(${user.originalIndex}, false)" class="bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]" title="ลบแถวนี้">
-                                    ✕
-                                </button>
-                            </td>
-                        `;
-                        previewTableBody.appendChild(row);
-                    });
-                    
-                    const totalRows = errorData.length + userImportData.length;
-                    previewCount.innerHTML = `
-                        <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalRows} รายการ</span> |
-                        <span class="text-red-600">ข้อผิดพลาด: ${errorData.length} รายการ</span> |
-                        <span class="text-green-600">ถูกต้อง: ${userImportData.length} รายการ</span>
-                    `;
-                    
-                    previewDiv.classList.remove('hidden');
-                    
-                    // Show errors if any
-                    const errorsDiv = document.getElementById('userImportErrors');
-                    const errorList = document.getElementById('userErrorList');
-                    
-                    if (errors.length > 0) {
-                        errorList.innerHTML = '';
-                        errors.forEach(error => {
-                            const li = document.createElement('li');
-                            li.className = 'text-red-700';
-                            li.textContent = `• ${error}`;
-                            errorList.appendChild(li);
-                        });
-                        errorsDiv.classList.remove('hidden');
-                    } else {
-                        errorsDiv.classList.add('hidden');
-                    }
-                    
-                    // อัปเดตสถิติและปุ่มนำเข้า
-                    updateUserPreviewSummary();
-                    
-                } catch (error) {
-                    console.error('Error previewing data:', error);
-                    alert('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + error.message);
-                }
-            };
-            
-            reader.readAsArrayBuffer(file);
-        }
-        
-        function removeUserRow(userIndex, isError) {
-            // ทำเครื่องหมายว่าแถวนี้ถูกลบ
-            if (isError) {
-                // หาใน errorData และทำเครื่องหมายลบ
-                const errorRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
-                if (errorRow) {
-                    errorRow.style.opacity = '0.5';
-                    errorRow.style.textDecoration = 'line-through';
-                }
-            } else {
-                // หาใน userImportData และทำเครื่องหมายลบ
-                const userDataIndex = userImportData.findIndex(user => user.originalIndex === userIndex);
-                if (userDataIndex !== -1) {
-                    userImportData[userDataIndex].removed = true;
-                }
-                
-                const userRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
-                if (userRow) {
-                    userRow.style.opacity = '0.5';
-                    userRow.style.textDecoration = 'line-through';
-                    
-                    const deleteBtn = userRow.querySelector('button');
-                    if (deleteBtn) {
-                        deleteBtn.innerHTML = '↶';
-                        deleteBtn.title = 'คืนค่าแถวนี้';
-                        deleteBtn.className = 'bg-blue-500 text-white hover:bg-blue-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
-                        deleteBtn.onclick = () => restoreUserRow(userIndex);
-                    }
-                }
-            }
-            
-            updateUserPreviewSummary();
-        }
-        
-        function restoreUserRow(userIndex) {
-            const userDataIndex = userImportData.findIndex(user => user.originalIndex === userIndex);
-            if (userDataIndex !== -1) {
-                userImportData[userDataIndex].removed = false;
-            }
-            
-            const userRow = document.querySelector(`tr[data-user-index="${userIndex}"]`);
-            if (userRow) {
-                userRow.style.opacity = '1';
-                userRow.style.textDecoration = 'none';
-                
-                const restoreBtn = userRow.querySelector('button');
-                if (restoreBtn) {
-                    restoreBtn.innerHTML = '✕';
-                    restoreBtn.title = 'ลบแถวนี้';
-                    restoreBtn.className = 'bg-red-500 text-white hover:bg-red-600 rounded px-2 py-1 text-xs font-bold min-w-[30px]';
-                    restoreBtn.onclick = () => removeUserRow(userIndex, false);
-                }
-            }
-            
-            updateUserPreviewSummary();
-        }
-        
-        function updateUserPreviewSummary() {
-            const activeData = userImportData.filter(item => !item.removed);
-            const totalCount = userImportData.length;
-            const activeCount = activeData.length;
-            const removedCount = totalCount - activeCount;
-            
-            const previewCount = document.getElementById('userPreviewCount');
-            if (previewCount) {
-                previewCount.innerHTML = `
-                    <span class="text-gray-600">จำนวนข้อมูลทั้งหมด: ${totalCount} รายการ</span> |
-                    <span class="text-green-600">จะนำเข้า: ${activeCount} รายการ</span>
-                    ${removedCount > 0 ? `| <span class="text-red-600">ถูกลบ: ${removedCount} รายการ</span>` : ''}
-                `;
-            }
-            
-            const importBtn = document.getElementById('importUsersBtn');
-            if (importBtn) {
-                if (activeCount === 0) {
-                    importBtn.disabled = true;
-                    importBtn.textContent = 'ไม่สามารถนำเข้าได้ (ไม่มีข้อมูลที่เลือก)';
-                    importBtn.className = 'px-4 py-2 bg-gray-400 text-white rounded cursor-not-allowed';
-                } else {
-                    importBtn.disabled = false;
-                    importBtn.textContent = `นำเข้าข้อมูล (${activeCount} รายการ)`;
-                    importBtn.className = 'px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700';
-                }
-            }
-        }
-        
-        async function importUsers() {
-            const activeData = userImportData.filter(item => !item.removed);
-            
-            if (activeData.length === 0) {
-                alert('ไม่มีข้อมูลที่จะนำเข้า');
-                return;
-            }
-            
-            const importBtn = document.getElementById('importUsersBtn');
-            if (importBtn) {
-                importBtn.disabled = true;
-                importBtn.textContent = 'กำลังนำเข้า...';
-            }
-            
-            try {
-                let successCount = 0;
-                let errorCount = 0;
-                
-                for (const userData of activeData) {
-                    try {
-                        // เพิ่มบัญชีผู้ใช้ใหม่
-                        const userRef = ref(database, `users/${userData.username}`);
-                        await set(userRef, {
-                            name: userData.name,
-                            orgId: userData.orgId,
-                            role: userData.role,
-                            password: userData.password,
-                            createdAt: new Date().toISOString(),
-                            createdBy: currentUser.username
-                        });
-                        
-                        successCount++;
-                        
-                        // Log activity
-                        await logActivity('เพิ่ม', `นำเข้าบัญชีผู้ใช้งานจาก Excel: ${userData.name} (${userData.username}) - ${userData.role === 'admin' ? 'ผู้ดูแลระบบ' : 'เจ้าหน้าที่'} - ${userData.organization}`);
-                        
-                    } catch (error) {
-                        console.error('Error importing user:', userData.username, error);
-                        errorCount++;
-                    }
-                }
-                
-                // แสดงผลลัพธ์
-                if (successCount > 0) {
-                    alert(`นำเข้าบัญชีผู้ใช้งานสำเร็จ ${successCount} รายการ${errorCount > 0 ? ` (มีข้อผิดพลาด ${errorCount} รายการ)` : ''}`);
-                    hideModal();
-                    loadUserAccountsData(); // รีโหลดข้อมูลบัญชีผู้ใช้
-                } else {
-                    alert('ไม่สามารถนำเข้าข้อมูลได้ กรุณาลองใหม่อีกครั้ง');
-                }
-                
-            } catch (error) {
-                console.error('Error importing users:', error);
-                alert('เกิดข้อผิดพลาดในการนำเข้าข้อมูล');
-            } finally {
-                if (importBtn) {
-                    importBtn.disabled = false;
-                    importBtn.textContent = 'นำเข้าข้อมูล';
-                }
-            }
-        }
-        
         // Edit and Delete functions
         function editMember(id) {
             const officer = officers.find(o => o.id === id);
@@ -7753,9 +7827,8 @@
         
         async function deleteUser(username) {
             // ป้องกันการลบ admin คนสุดท้าย
-            const userArray = Object.values(users);
-            const adminUsers = userArray.filter(u => u.role === 'admin');
-            const userToDelete = users[username];
+            const adminUsers = users.filter(u => u.role === 'admin');
+            const userToDelete = users.find(u => u.username === username);
             
             if (userToDelete && userToDelete.role === 'admin' && adminUsers.length <= 1) {
                 alert('ไม่สามารถลบผู้ดูแลระบบคนสุดท้ายได้');
